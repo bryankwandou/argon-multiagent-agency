@@ -48,7 +48,27 @@ export async function runEngineVerificationSuite(): Promise<void> {
   if (mission.councilVotes.length < 4) {
     throw new Error('Expected Grok Council votes to be populated');
   }
-  if (!mission.artifact.code || mission.artifact.code.length < 50) {
+  if (!mission.artifact?.code || mission.artifact.code.length < 50) {
     throw new Error('Expected production code artifact to be generated');
+  }
+
+  // 6. Informational link query verification (clean response, zero mock wires/artifacts)
+  const infoMission = await executeGeminiArgonMission({
+    prompt: 'minta link vercel',
+    mode: 'AUTO_DAG',
+    priority: 'P1',
+    targetAgentId: 'ALL',
+    locale: 'id',
+    wireCounter: 2,
+  });
+
+  if (infoMission.newWires.length !== 0) {
+    throw new Error('Expected 0 wires for informational link query');
+  }
+  if (infoMission.artifact !== undefined) {
+    throw new Error('Expected no code artifact for link query');
+  }
+  if (!infoMission.orchestratorSummary.includes('https://argon-multiagent-agency.vercel.app')) {
+    throw new Error('Expected official Vercel URL in summary');
   }
 }

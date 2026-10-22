@@ -48,6 +48,7 @@ import {
   validateGeminiApiKey,
 } from '../services/geminiArgonEngine';
 import { IsometricOfficeCanvas } from './IsometricOfficeCanvas';
+import { InteractiveSandboxRunner } from './InteractiveSandboxRunner';
 
 type CenterTab = 'FLOOR' | 'DOTS_DAG' | 'GROK_COUNCIL' | 'ARTIFACTS';
 
@@ -486,73 +487,89 @@ export function MultiAgentAgencyView() {
         wireCounter,
       });
 
-      setWireCounter((c) => c + 3);
-      setWires((prev) => [...plan.newWires, ...prev]);
-      if (plan.newWires[0]) {
-        setSelectedWireId(plan.newWires[0].id);
+      if (plan.newWires.length > 0) {
+        setWireCounter((c) => c + plan.newWires.length);
+        setWires((prev) => [...plan.newWires, ...prev]);
+        if (plan.newWires[0]) {
+          setSelectedWireId(plan.newWires[0].id);
+        }
+
+        setCodeAdded((a) => a + plan.totalAddedLines);
+        setCodeRemoved((r) => r + plan.totalRemovedLines);
+        setCommitCount((c) => c + plan.newWires.length);
+        setLiveDagNodes((n) => n + plan.newWires.length);
+
+        const newHash = generateCommitHash();
+        setPreviewCommit(newHash);
+        setPreviewHeld(true);
+
+        const newShipEntry: ShipLogEntry = {
+          id: `ship-${Date.now()}`,
+          commitHash: newHash,
+          timestamp: formatCurrentTimeCT(),
+          wireId: plan.newWires[0]?.id ?? 'AG-200',
+          agentId: 'EXEC-07',
+          summary: `feat(agency): ${plan.missionTitle}`,
+          deltaAdded: plan.totalAddedLines,
+          deltaRemoved: plan.totalRemovedLines,
+          environment: 'PREVIEW',
+        };
+        setShipLog((prev) => [newShipEntry, ...prev]);
+
+        setAgents((prev) =>
+          prev.map((ag) => {
+            const trace = plan.traces.find((tr) => tr.agentId === ag.id);
+            const vote = plan.councilVotes.find((v) => v.agentId === ag.id);
+            const assignedWire = plan.newWires.find((w) => w.assignedAgentId === ag.id);
+
+            return {
+              ...ag,
+              state: 'TYPING',
+              targetCoord: { ...ag.deskCoord },
+              activeWireId: assignedWire?.id ?? ag.activeWireId,
+              tasksCompleted: plan.selectedAgents.includes(ag.id)
+                ? ag.tasksCompleted + 1
+                : ag.tasksCompleted,
+              tokensProcessed: ag.tokensProcessed + 1420,
+              speechBubble: trace
+                ? trace.outputSummary.slice(0, 56)
+                : vote
+                ? `${vote.stance}: ${vote.critique.slice(0, 48)}`
+                : ag.speechBubble,
+              speechUpdatedAt: Date.now(),
+            };
+          })
+        );
+      } else {
+        setAgents((prev) =>
+          prev.map((ag) =>
+            ag.id === 'ORCH-01'
+              ? {
+                  ...ag,
+                  speechBubble: plan.orchestratorSummary.slice(0, 64),
+                  speechUpdatedAt: Date.now(),
+                }
+              : ag
+          )
+        );
       }
 
-      setCodeAdded((a) => a + plan.totalAddedLines);
-      setCodeRemoved((r) => r + plan.totalRemovedLines);
-      setCommitCount((c) => c + 3);
-      setLiveDagNodes((n) => n + plan.newWires.length);
-
-      const newHash = generateCommitHash();
-      setPreviewCommit(newHash);
-      setPreviewHeld(true);
-
-      const newShipEntry: ShipLogEntry = {
-        id: `ship-${Date.now()}`,
-        commitHash: newHash,
-        timestamp: formatCurrentTimeCT(),
-        wireId: plan.newWires[0]?.id ?? 'AG-200',
-        agentId: 'EXEC-07',
-        summary: `feat(agency): ${plan.missionTitle}`,
-        deltaAdded: plan.totalAddedLines,
-        deltaRemoved: plan.totalRemovedLines,
-        environment: 'PREVIEW',
-      };
-      setShipLog((prev) => [newShipEntry, ...prev]);
-
-      setAgents((prev) =>
-        prev.map((ag) => {
-          const trace = plan.traces.find((tr) => tr.agentId === ag.id);
-          const vote = plan.councilVotes.find((v) => v.agentId === ag.id);
-          const assignedWire = plan.newWires.find((w) => w.assignedAgentId === ag.id);
-
-          return {
-            ...ag,
-            state: 'TYPING',
-            targetCoord: { ...ag.deskCoord },
-            activeWireId: assignedWire?.id ?? ag.activeWireId,
-            tasksCompleted: plan.selectedAgents.includes(ag.id)
-              ? ag.tasksCompleted + 1
-              : ag.tasksCompleted,
-            tokensProcessed: ag.tokensProcessed + 1420,
-            speechBubble: trace
-              ? trace.outputSummary.slice(0, 56)
-              : vote
-              ? `${vote.stance}: ${vote.critique.slice(0, 48)}`
-              : ag.speechBubble,
-            speechUpdatedAt: Date.now(),
-          };
-        })
-      );
-
-      if (useCouncilWalk) {
+      if (plan.councilVotes.length > 0 && useCouncilWalk) {
         window.setTimeout(() => setCouncilActive(false), 1800);
       }
 
-      const traceChatter: FloorChatterItem[] = plan.traces.map((tr, i) => ({
-        id: `chat-tr-${Date.now()}-${i}`,
-        time: formatCurrentTimeCT(),
-        agentId: tr.agentId,
-        agentName: tr.agentName,
-        wireId: tr.wireId,
-        category: 'TOOL',
-        text: `${tr.wireId} [${tr.toolCalls.join(' -> ')}]: ${tr.outputSummary}`,
-      }));
-      setChatter((prev) => [...traceChatter, ...prev.slice(0, 26)]);
+      if (plan.traces.length > 0) {
+        const traceChatter: FloorChatterItem[] = plan.traces.map((tr, i) => ({
+          id: `chat-tr-${Date.now()}-${i}`,
+          time: formatCurrentTimeCT(),
+          agentId: tr.agentId,
+          agentName: tr.agentName,
+          wireId: tr.wireId,
+          category: 'TOOL',
+          text: `${tr.wireId} [${tr.toolCalls.join(' -> ')}]: ${tr.outputSummary}`,
+        }));
+        setChatter((prev) => [...traceChatter, ...prev.slice(0, 26)]);
+      }
 
       const responseMsg: AgencyChatMessage = {
         id: `msg-orch-${Date.now()}`,
@@ -567,9 +584,9 @@ export function MultiAgentAgencyView() {
         mode: orchestrationMode,
         priority,
         modelBadge: 'Gemini 4 Argon (High)',
-        decomposedWires: plan.newWires.map((w) => w.id),
-        traces: plan.traces,
-        councilVotes: plan.councilVotes,
+        decomposedWires: plan.newWires.length > 0 ? plan.newWires.map((w) => w.id) : undefined,
+        traces: plan.traces.length > 0 ? plan.traces : undefined,
+        councilVotes: plan.councilVotes.length > 0 ? plan.councilVotes : undefined,
         artifact: plan.artifact,
         latencyMs: plan.latencyMs,
       };
@@ -1210,35 +1227,19 @@ export function MultiAgentAgencyView() {
                   </h2>
                 </div>
 
-                {selectedWire?.artifact && (
-                  <div className="rounded-lg border border-line-strong bg-terminal-card p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line pb-3">
-                      <div>
-                        <span className="font-mono text-xs font-bold text-wire-cyan">
-                          {selectedWire.id} // {selectedWire.artifact.filename}
-                        </span>
-                        <p className="mt-0.5 text-xs text-muted">
-                          {selectedWire.artifact.summary}
-                        </p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          handleCopyArtifact(selectedWire.id, selectedWire.artifact!.code)
-                        }
-                        className="inline-flex items-center gap-1.5 rounded border border-line bg-terminal-bg px-3 py-1 font-mono text-xs text-fg hover:border-wire-cyan"
-                      >
-                        <Copy className="size-3.5 text-wire-cyan" aria-hidden="true" />
-                        <span>
-                          {copiedArtifactId === selectedWire.id
-                            ? t.controls.copied
-                            : t.controls.copyCode}
-                        </span>
-                      </button>
-                    </div>
-                    <pre className="mt-3 max-h-80 overflow-x-auto rounded bg-terminal-bg p-3 font-mono text-xs leading-relaxed text-fg">
-                      <code>{selectedWire.artifact.code}</code>
-                    </pre>
+                {selectedWire?.artifact ? (
+                  <InteractiveSandboxRunner
+                    artifact={selectedWire.artifact}
+                    wire={selectedWire}
+                    locale={locale}
+                    onCopy={handleCopyArtifact}
+                    isCopied={copiedArtifactId === selectedWire.id}
+                  />
+                ) : (
+                  <div className="rounded-lg border border-dashed border-line p-6 text-center text-xs font-mono text-muted">
+                    {locale === 'id'
+                      ? 'Pilih wire di sidebar kiri atau jalankan misi baru untuk melihat artefak sandbox.'
+                      : 'Select a wire in the sidebar or run a new mission to view sandbox artifacts.'}
                   </div>
                 )}
 
@@ -1548,8 +1549,13 @@ export function MultiAgentAgencyView() {
                         </button>
                         <button
                           type="button"
-                          onClick={() => setCenterTab('ARTIFACTS')}
-                          className="rounded bg-wire-cyan/20 px-2 py-0.5 font-mono text-[10px] font-semibold text-wire-cyan"
+                          onClick={() => {
+                            if (msg.decomposedWires && msg.decomposedWires[0]) {
+                              setSelectedWireId(msg.decomposedWires[0]);
+                            }
+                            setCenterTab('ARTIFACTS');
+                          }}
+                          className="rounded bg-wire-cyan/20 px-2 py-0.5 font-mono text-[10px] font-semibold text-wire-cyan hover:bg-wire-cyan/30"
                         >
                           {t.controls.openSandbox}
                         </button>
