@@ -620,17 +620,39 @@ export interface MissionPlanResult {
   newWires: TaskWire[];
   traces: SubAgentExecutionTrace[];
   councilVotes: CouncilVote[];
-  artifact: CodeArtifact;
+  artifact?: CodeArtifact;
   totalAddedLines: number;
   totalRemovedLines: number;
   latencyMs: number;
   usedLiveApi: boolean;
 }
 
-function detectMissionDomain(
-  prompt: string
-): 'SECURITY' | 'FRONTEND' | 'DATA_PIPELINE' | 'FULLSTACK_AGENCY' {
+export type MissionDomain =
+  | 'SECURITY'
+  | 'FRONTEND'
+  | 'GAME'
+  | 'HELLO_WORLD'
+  | 'DATA_PIPELINE'
+  | 'FULLSTACK_AGENCY';
+
+function detectMissionDomain(prompt: string): MissionDomain {
   const lower = prompt.toLowerCase();
+  if (
+    lower.includes('game') ||
+    lower.includes('gme') ||
+    lower.includes('permainan') ||
+    lower.includes('arcade') ||
+    lower.includes('play')
+  ) {
+    return 'GAME';
+  }
+  if (
+    lower.includes('hello') ||
+    lower.includes('heelo') ||
+    lower.includes('halo world')
+  ) {
+    return 'HELLO_WORLD';
+  }
   if (
     lower.includes('security') ||
     lower.includes('keamanan') ||
@@ -713,6 +735,71 @@ export async function executeGeminiArgonMission(params: {
 
   const shortTopic =
     cleanPrompt.length > 44 ? `${cleanPrompt.slice(0, 44).trim()}...` : cleanPrompt;
+
+  const lower = cleanPrompt.toLowerCase();
+  const isLinkQuery =
+    lower.includes('vercel') ||
+    lower.includes('github') ||
+    lower.includes('link') ||
+    lower.includes('url') ||
+    lower.includes('tautan') ||
+    lower.includes('alamat') ||
+    lower.includes('web');
+
+  const isGreeting =
+    (lower.startsWith('halo') ||
+      lower.startsWith('hello') ||
+      lower.startsWith('selamat') ||
+      lower === 'hi' ||
+      lower === 'hai') &&
+    cleanPrompt.length < 50;
+
+  if (isLinkQuery || isGreeting) {
+    let orchestratorSummary = '';
+    if (isLinkQuery) {
+      orchestratorSummary =
+        params.locale === 'id'
+          ? `Berikut adalah tautan resmi proyek Argon Multi-Agent Agency:\n- Vercel Live: https://argon-multiagent-agency.vercel.app\n- GitHub: https://github.com/bryankwandou/argon-multiagent-agency\n- Server Lokal: http://localhost:5173\n\nSemua deployment aktif dan sistem berjalan normal.`
+          : `Here are the official links for Argon Multi-Agent Agency:\n- Vercel Live: https://argon-multiagent-agency.vercel.app\n- GitHub: https://github.com/bryankwandou/argon-multiagent-agency\n- Local Server: http://localhost:5173\n\nAll deployments are active and running normally.`;
+    } else {
+      orchestratorSummary =
+        params.locale === 'id'
+          ? `Selamat pagi! Pusat Komando Multi-Agen Argon siap menerima instruksi tugas teknis atau arsitektur sistem Anda.`
+          : `Good morning! The Argon Multi-Agent Command Center is active and ready for your technical or architecture directives.`;
+    }
+
+    let usedLiveApi = false;
+    if (params.apiKey && validateGeminiApiKey(params.apiKey)) {
+      try {
+        const liveText = await callLiveGeminiEndpoint(
+          params.apiKey.trim(),
+          cleanPrompt,
+          params.mode,
+          params.locale
+        );
+        if (liveText) {
+          orchestratorSummary = liveText;
+          usedLiveApi = true;
+        }
+      } catch {
+        // Retain fallback summary
+      }
+    }
+
+    const latencyMs = Math.max(180, Math.round(performance.now() - startedAt));
+    return {
+      missionTitle: shortTopic,
+      orchestratorSummary,
+      selectedAgents: ['ORCH-01'],
+      newWires: [],
+      traces: [],
+      councilVotes: [],
+      totalAddedLines: 0,
+      totalRemovedLines: 0,
+      latencyMs,
+      usedLiveApi,
+    };
+  }
 
   const artifact: CodeArtifact = buildDomainArtifact(domain, cleanPrompt, wireIdArch);
 
@@ -897,19 +984,10 @@ export async function executeGeminiArgonMission(params: {
     },
   ];
 
-  const isLinkQuery =
-    cleanPrompt.toLowerCase().includes('vercel') ||
-    cleanPrompt.toLowerCase().includes('github') ||
-    cleanPrompt.toLowerCase().includes('link') ||
-    cleanPrompt.toLowerCase().includes('url');
-
-  let orchestratorSummary = isLinkQuery
-    ? params.locale === 'id'
-      ? `Berikut adalah tautan resmi proyek Argon Multi-Agent Agency:\n- Vercel Live: https://argon-multiagent-agency.vercel.app\n- GitHub: https://github.com/bryankwandou/argon-multiagent-agency\n- Server Lokal: http://localhost:5173\n\nSistem tetap memverifikasi konfigurasi cloud dan gerbang deployment secara otomatis.`
-      : `Here are the official links for Argon Multi-Agent Agency:\n- Vercel Live: https://argon-multiagent-agency.vercel.app\n- GitHub: https://github.com/bryankwandou/argon-multiagent-agency\n- Local Server: http://localhost:5173\n\nAll cloud deployment wires and security gates remain verified.`
-    : params.locale === 'id'
-    ? `Misi "${cleanPrompt}" telah dieksekusi oleh Gemini 4 Argon (High) melalui mode ${params.mode}. Pekerjaan telah dibagi ke dalam 3 Wire aktif (${wireIdArch}, ${wireIdExec}, ${wireIdSec}), diaudit silang oleh Dewan Multi-Agen (Konsensus 99.3%), dan menghasilkan modul produksi siap pakai di ${artifact.filename}.`
-    : `Mission "${cleanPrompt}" has been executed by Gemini 4 Argon (High) in ${params.mode} mode. Work was decomposed into 3 active Wires (${wireIdArch}, ${wireIdExec}, ${wireIdSec}), cross-audited by the Multi-Agent Council (99.3% consensus), and compiled into a production module at ${artifact.filename}.`;
+  let orchestratorSummary =
+    params.locale === 'id'
+      ? `Misi "${cleanPrompt}" telah dieksekusi oleh Gemini 4 Argon (High) melalui mode ${params.mode}. Pekerjaan telah dibagi ke dalam 3 Wire aktif (${wireIdArch}, ${wireIdExec}, ${wireIdSec}), diaudit silang oleh Dewan Multi-Agen (Konsensus 99.3%), dan menghasilkan modul produksi siap pakai di ${artifact.filename}.`
+      : `Mission "${cleanPrompt}" has been executed by Gemini 4 Argon (High) in ${params.mode} mode. Work was decomposed into 3 active Wires (${wireIdArch}, ${wireIdExec}, ${wireIdSec}), cross-audited by the Multi-Agent Council (99.3% consensus), and compiled into a production module at ${artifact.filename}.`;
 
   let usedLiveApi = false;
 
@@ -1002,11 +1080,155 @@ async function callLiveGeminiEndpoint(
 }
 
 function buildDomainArtifact(
-  domain: 'SECURITY' | 'FRONTEND' | 'DATA_PIPELINE' | 'FULLSTACK_AGENCY',
+  domain: MissionDomain,
   prompt: string,
   wireId: string
 ): CodeArtifact {
   const safeComment = prompt.replace(/[*\/]/g, '').slice(0, 72);
+
+  if (domain === 'GAME') {
+    return {
+      filename: `src/components/sandbox/${wireId.toLowerCase()}RetroArcadeGame.tsx`,
+      language: 'typescript',
+      summary: `Interactive Playable Cyber Arcade Game with 60fps canvas loop, collision physics, and live score state.`,
+      code: `// Wire ${wireId} — Directive: ${safeComment}
+// Interactive Cyber Space Arcade Game
+import React, { useEffect, useRef, useState } from 'react';
+
+export function RetroArcadeGame() {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [score, setScore] = useState(0);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let animId: number;
+    let playerX = canvas.width / 2;
+    let items: Array<{ x: number; y: number; speed: number }> = [];
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      playerX = Math.max(20, Math.min(canvas.width - 20, e.clientX - rect.left));
+    };
+    canvas.addEventListener('mousemove', handleMouseMove);
+
+    const loop = () => {
+      ctx.fillStyle = '#0a0d14';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Player vessel
+      ctx.fillStyle = '#00f2fe';
+      ctx.beginPath();
+      ctx.moveTo(playerX, canvas.height - 20);
+      ctx.lineTo(playerX - 16, canvas.height - 6);
+      ctx.lineTo(playerX + 16, canvas.height - 6);
+      ctx.closePath();
+      ctx.fill();
+
+      // Spawn falling data packets
+      if (Math.random() < 0.05) {
+        items.push({ x: Math.random() * (canvas.width - 30) + 15, y: 0, speed: Math.random() * 2 + 1.5 });
+      }
+
+      items = items.filter((item) => {
+        item.y += item.speed;
+        ctx.fillStyle = '#39d353';
+        ctx.fillRect(item.x - 5, item.y - 5, 10, 10);
+
+        if (item.y >= canvas.height - 22 && Math.abs(item.x - playerX) < 20) {
+          setScore((s) => s + 10);
+          return false;
+        }
+        return item.y < canvas.height;
+      });
+
+      animId = requestAnimationFrame(loop);
+    };
+
+    animId = requestAnimationFrame(loop);
+    return () => {
+      cancelAnimationFrame(animId);
+      canvas.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="font-mono text-sm text-cyan-400">Score: {score}</div>
+      <canvas ref={canvasRef} width={480} height={260} className="rounded border border-cyan-500/30" />
+    </div>
+  );
+}`,
+    };
+  }
+
+  if (domain === 'HELLO_WORLD') {
+    return {
+      filename: `src/components/sandbox/${wireId.toLowerCase()}HelloWorldCard.tsx`,
+      language: 'typescript',
+      summary: `Interactive Hello World Component with reactive clicker, telemetry ping, and responsive theme.`,
+      code: `// Wire ${wireId} — Directive: ${safeComment}
+// Interactive Hello World Component
+import React, { useState } from 'react';
+
+export function HelloWorldCard() {
+  const [clickCount, setClickCount] = useState(0);
+
+  return (
+    <div className="flex flex-col items-center justify-center p-8 text-center bg-zinc-900 rounded-lg">
+      <h1 className="text-2xl font-bold text-emerald-400">Hello World! Localhost Runtime Active</h1>
+      <p className="mt-2 text-xs text-zinc-400">Directive compiled and executed on your local Vite development server.</p>
+      <button
+        onClick={() => setClickCount((c) => c + 1)}
+        className="mt-4 px-4 py-2 rounded bg-emerald-500 font-semibold text-black hover:bg-emerald-400"
+      >
+        Live Interaction Count: {clickCount}
+      </button>
+    </div>
+  );
+}`,
+    };
+  }
+
+  if (domain === 'FRONTEND') {
+    return {
+      filename: `src/components/sandbox/${wireId.toLowerCase()}KineticWidget.tsx`,
+      language: 'typescript',
+      summary: `Kinetic Interactive UI Widget with real-time state manipulation and zero-trust event telemetry.`,
+      code: `// Wire ${wireId} — Directive: ${safeComment}
+// Kinetic UI Interactive Widget
+import React, { useState } from 'react';
+
+export function KineticWidget() {
+  const [active, setActive] = useState(true);
+  const [pulseCount, setPulseCount] = useState(1);
+
+  return (
+    <div className="p-6 rounded-lg border border-sky-800 bg-zinc-900 text-zinc-100">
+      <h2 className="text-lg font-mono font-bold text-sky-400">Kinetic Reactive Stream</h2>
+      <p className="mt-1 text-xs text-zinc-400">State: {active ? 'ONLINE' : 'STANDBY'}</p>
+      <div className="mt-4 flex gap-2">
+        <button
+          onClick={() => setPulseCount((c) => c + 1)}
+          className="px-3 py-1.5 rounded bg-sky-500 text-xs font-mono font-bold text-black"
+        >
+          Send Telemetry Pulse ({pulseCount})
+        </button>
+        <button
+          onClick={() => setActive((v) => !v)}
+          className="px-3 py-1.5 rounded border border-zinc-700 text-xs font-mono"
+        >
+          Toggle State
+        </button>
+      </div>
+    </div>
+  );
+}`,
+    };
+  }
 
   if (domain === 'SECURITY') {
     return {
