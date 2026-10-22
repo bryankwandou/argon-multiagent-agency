@@ -1,0 +1,72 @@
+{
+  "brand": {
+    "name": "Argon Multi-Agent Agency",
+    "modelBadge": "GEMINI 4 ARGON HIGH",
+    "subtitle": "MULTI-AGENT AGENCY WORKSTATION · OPENAI DOTS DAG + GROK COUNCIL"
+  },
+  "tabs": {
+    "floor": "2.5D Office Floor",
+    "dots": "OpenAI Dots DAG",
+    "council": "Grok Council",
+    "artifacts": "Artifacts & Tape"
+  },
+  "controls": {
+    "apiLive": "API: LIVE",
+    "aiCore": "AI: CORE",
+    "switchLang": "Switch display language",
+    "switchTheme": "Switch dark or light theme",
+    "promote": "Promote",
+    "unblock": "Unblock",
+    "inspect": "Inspect",
+    "councilSummon": "Council Sync",
+    "councilReturn": "Return to Desks",
+    "runDagWave": "Run DAG Wave",
+    "copyCode": "Copy Code",
+    "copied": "Copied",
+    "openSandbox": "Open Sandbox",
+    "dispatch": "Dispatch"
+  },
+  "sidebar": {
+    "envTitle": "ENV",
+    "envMesh": "CLOUD RUN MESH",
+    "prodTitle": "PRODUCTION",
+    "prodSub": "LIVE staging",
+    "previewTitle": "PREVIEW",
+    "previewUnconfirmed": "unconfirmed",
+    "previewVerified": "verified ready",
+    "previewHeld": "HELD on Cloud Run",
+    "previewSynced": "SYNCED on Cloud Run",
+    "workforceTitle": "WORKFORCE — 2026-10-22 CT",
+    "agentsOnFloor": "AGENTS ON FLOOR",
+    "workBotTime": "WORK BOT TIME",
+    "keepAlive": "100% keep-alive",
+    "codeDelta": "CODE DELTA",
+    "commitsSinceMidnight": "commits since midnight CT",
+    "shipLog": "SHIP-LOG",
+    "appendOnlyTape": "append-only tape",
+    "wiresHeader": "WIRES — Moment bars, not % complete",
+    "wiresLive": "WIRES LIVE",
+    "floorChatter": "FLOOR CHATTER"
+  },
+  "chat": {
+    "header": "GEMINI 4 ARGON (HIGH) · LIVE CHAT",
+    "readyBadge": "MULTI-AGENT READY",
+    "modeAutoDag": "DOTS AUTO-DAG",
+    "modeGrokCouncil": "GROK COUNCIL",
+    "modeDirect": "DIRECT POD",
+    "targetLabel": "Assign:",
+    "allAgency": "@Full-Agency (10 Agents)",
+    "placeholder": "Command Gemini 4 Argon High to delegate agency tasks (e.g., Architect payment API & run zero-trust audit)...",
+    "executing": "Gemini 4 Argon (High) orchestrating floor agents & DAG wires...",
+    "userSender": "EXECUTIVE DIRECTIVE (YOU)",
+    "tracesHeader": "PARALLEL SUB-AGENT TRACES (OPENAI DOTS)",
+    "councilHeader": "GROK MULTI-AGENT COUNCIL CONSENSUS"
+  },
+  "modal": {
+    "title": "Gemini 4 Argon (High) Engine Configuration",
+    "description": "The built-in Autonomous Multi-Agent Synthesis Engine is active out of the box. To optionally connect live Google Gemini API responses, enter your session API key below (kept strictly in ephemeral session memory).",
+    "keyLabel": "GOOGLE GEMINI API KEY (OPTIONAL)",
+    "cancel": "Cancel",
+    "save": "Save Engine Config"
+  }
+}
