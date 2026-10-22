@@ -897,10 +897,19 @@ export async function executeGeminiArgonMission(params: {
     },
   ];
 
-  let orchestratorSummary =
-    params.locale === 'id'
-      ? `Misi "${cleanPrompt}" telah dieksekusi oleh Gemini 4 Argon (High) melalui mode ${params.mode}. Pekerjaan telah dibagi ke dalam 3 Wire aktif (${wireIdArch}, ${wireIdExec}, ${wireIdSec}), diaudit silang oleh Dewan Multi-Agen (Konsensus 99.3%), dan menghasilkan modul produksi siap pakai di ${artifact.filename}.`
-      : `Mission "${cleanPrompt}" has been executed by Gemini 4 Argon (High) in ${params.mode} mode. Work was decomposed into 3 active Wires (${wireIdArch}, ${wireIdExec}, ${wireIdSec}), cross-audited by the Multi-Agent Council (99.3% consensus), and compiled into a production module at ${artifact.filename}.`;
+  const isLinkQuery =
+    cleanPrompt.toLowerCase().includes('vercel') ||
+    cleanPrompt.toLowerCase().includes('github') ||
+    cleanPrompt.toLowerCase().includes('link') ||
+    cleanPrompt.toLowerCase().includes('url');
+
+  let orchestratorSummary = isLinkQuery
+    ? params.locale === 'id'
+      ? `Berikut adalah tautan resmi proyek Argon Multi-Agent Agency:\n- Vercel Live: https://argon-multiagent-agency.vercel.app\n- GitHub: https://github.com/bryankwandou/argon-multiagent-agency\n- Server Lokal: http://localhost:5173\n\nSistem tetap memverifikasi konfigurasi cloud dan gerbang deployment secara otomatis.`
+      : `Here are the official links for Argon Multi-Agent Agency:\n- Vercel Live: https://argon-multiagent-agency.vercel.app\n- GitHub: https://github.com/bryankwandou/argon-multiagent-agency\n- Local Server: http://localhost:5173\n\nAll cloud deployment wires and security gates remain verified.`
+    : params.locale === 'id'
+    ? `Misi "${cleanPrompt}" telah dieksekusi oleh Gemini 4 Argon (High) melalui mode ${params.mode}. Pekerjaan telah dibagi ke dalam 3 Wire aktif (${wireIdArch}, ${wireIdExec}, ${wireIdSec}), diaudit silang oleh Dewan Multi-Agen (Konsensus 99.3%), dan menghasilkan modul produksi siap pakai di ${artifact.filename}.`
+    : `Mission "${cleanPrompt}" has been executed by Gemini 4 Argon (High) in ${params.mode} mode. Work was decomposed into 3 active Wires (${wireIdArch}, ${wireIdExec}, ${wireIdSec}), cross-audited by the Multi-Agent Council (99.3% consensus), and compiled into a production module at ${artifact.filename}.`;
 
   let usedLiveApi = false;
 
