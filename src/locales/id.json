@@ -1,0 +1,72 @@
+{
+  "brand": {
+    "name": "Argon Multi-Agent Agency",
+    "modelBadge": "GEMINI 4 ARGON HIGH",
+    "subtitle": "WORKSTATION AGENSI MULTI-AGEN · OPENAI DOTS DAG + DEWAN GROK"
+  },
+  "tabs": {
+    "floor": "Lantai Agensi 2.5D",
+    "dots": "OpenAI Dots DAG",
+    "council": "Dewan Grok",
+    "artifacts": "Artefak & Tape"
+  },
+  "controls": {
+    "apiLive": "API: LANGSUNG",
+    "aiCore": "AI: OTONOM",
+    "switchLang": "Ganti bahasa tampilan",
+    "switchTheme": "Ganti mode warna gelap atau terang",
+    "promote": "Promosi",
+    "unblock": "Buka",
+    "inspect": "Inspeksi",
+    "councilSummon": "Panggil Dewan",
+    "councilReturn": "Kembali ke Meja",
+    "runDagWave": "Jalankan Gelombang DAG",
+    "copyCode": "Salin Kode",
+    "copied": "Tersalin",
+    "openSandbox": "Buka Sandbox",
+    "dispatch": "Kirim"
+  },
+  "sidebar": {
+    "envTitle": "ENV",
+    "envMesh": "CLOUD RUN MESH",
+    "prodTitle": "PRODUCTION",
+    "prodSub": "LIVE staging",
+    "previewTitle": "PREVIEW",
+    "previewUnconfirmed": "unconfirmed",
+    "previewVerified": "verified ready",
+    "previewHeld": "HELD on Cloud Run",
+    "previewSynced": "SYNCED on Cloud Run",
+    "workforceTitle": "WORKFORCE — 2026-10-22 CT",
+    "agentsOnFloor": "AGENTS ON FLOOR",
+    "workBotTime": "WORK BOT TIME",
+    "keepAlive": "100% keep-alive",
+    "codeDelta": "CODE DELTA",
+    "commitsSinceMidnight": "commits since midnight CT",
+    "shipLog": "SHIP-LOG",
+    "appendOnlyTape": "append-only tape",
+    "wiresHeader": "WIRES — Moment bars, not % complete",
+    "wiresLive": "WIRES LIVE",
+    "floorChatter": "FLOOR CHATTER"
+  },
+  "chat": {
+    "header": "GEMINI 4 ARGON (HIGH) · LIVE CHAT",
+    "readyBadge": "MULTI-AGENT READY",
+    "modeAutoDag": "DOTS AUTO-DAG",
+    "modeGrokCouncil": "DEWAN GROK",
+    "modeDirect": "POD LANGSUNG",
+    "targetLabel": "Target:",
+    "allAgency": "@Semua-Agensi (10 Agen)",
+    "placeholder": "Perintahkan Gemini 4 Argon High untuk membagi tugas ke agensi (mis. Buat arsitektur API & audit zero-trust)...",
+    "executing": "Gemini 4 Argon (High) sedang mengorkestrasi agen di lantai...",
+    "userSender": "DIREKTIF EKSEKUTIF (ANDA)",
+    "tracesHeader": "JEJAK EKSEKUSI SUB-AGEN PARALEL (OPENAI DOTS)",
+    "councilHeader": "KONSENSUS DEWAN MULTI-AGEN GROK"
+  },
+  "modal": {
+    "title": "Konfigurasi Mesin Gemini 4 Argon (High)",
+    "description": "Mesin Orkestrasi Multi-Agen bawaan sudah aktif penuh secara instan. Jika Anda ingin menghubungkan streaming LLM langsung ke Google Gemini API, masukkan kunci API sesi Anda di bawah (hanya disimpan di memori RAM sesi ini).",
+    "keyLabel": "KUNCI API GOOGLE GEMINI (OPSIONAL)",
+    "cancel": "Batal",
+    "save": "Simpan Konfigurasi"
+  }
+}
