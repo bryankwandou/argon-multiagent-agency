@@ -36,6 +36,7 @@ export function InteractiveSandboxRunner({
 
   const isHelloWorld =
     artifact.filename.toLowerCase().includes('hello') ||
+    artifact.filename.toLowerCase().includes('hi') ||
     artifact.code.includes('HelloWorld');
 
   // Default to LIVE_PREVIEW if it's a Game or HelloWorld, so the user sees results immediately

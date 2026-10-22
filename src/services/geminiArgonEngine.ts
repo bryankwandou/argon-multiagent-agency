@@ -649,7 +649,10 @@ function detectMissionDomain(prompt: string): MissionDomain {
   if (
     lower.includes('hello') ||
     lower.includes('heelo') ||
-    lower.includes('halo world')
+    lower.includes('halo world') ||
+    lower.includes('hi') ||
+    lower.includes('hai') ||
+    lower.includes('halo')
   ) {
     return 'HELLO_WORLD';
   }
