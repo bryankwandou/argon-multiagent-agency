@@ -48,6 +48,8 @@ import {
   generateCommitHash,
   sanitizePromptInput,
   validateGeminiApiKey,
+  verifyLiveGeminiConnection,
+  type ApiVerificationResult,
 } from '../services/geminiArgonEngine';
 import { IsometricOfficeCanvas } from './IsometricOfficeCanvas';
 import { InteractiveSandboxRunner } from './InteractiveSandboxRunner';
@@ -206,6 +208,8 @@ export function MultiAgentAgencyView() {
   });
   const [apiKeyDraft, setApiKeyDraft] = useState('');
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
+  const [isVerifyingKey, setIsVerifyingKey] = useState(false);
+  const [verificationResult, setVerificationResult] = useState<ApiVerificationResult | null>(null);
 
   const [messages, setMessages] = useState<AgencyChatMessage[]>(() => [
     {
@@ -690,6 +694,35 @@ export function MultiAgentAgencyView() {
     }, 2000);
   };
 
+  const handleTestConnection = async () => {
+    const trimmed = apiKeyDraft.trim();
+    if (!trimmed) {
+      setApiKeyError(
+        locale === 'id'
+          ? 'Masukkan kunci API Gemini terlebih dahulu untuk melakukan pengujian.'
+          : 'Please enter a Gemini API key first to run verification.'
+      );
+      return;
+    }
+    setIsVerifyingKey(true);
+    setApiKeyError(null);
+    setVerificationResult(null);
+    try {
+      const res = await verifyLiveGeminiConnection(trimmed, locale);
+      setVerificationResult(res);
+      if (!res.ok) {
+        setApiKeyError(
+          res.error ||
+            (locale === 'id' ? 'Gagal menghubungi Gemini API.' : 'Failed to reach Gemini API.')
+        );
+      }
+    } catch (err) {
+      setApiKeyError(err instanceof Error ? err.message : 'Connection test failed.');
+    } finally {
+      setIsVerifyingKey(false);
+    }
+  };
+
   const handleSaveApiKey = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = apiKeyDraft.trim();
@@ -797,16 +830,29 @@ export function MultiAgentAgencyView() {
             onClick={() => {
               setApiKeyDraft(geminiApiKey);
               setApiKeyError(null);
+              setVerificationResult(null);
               setApiModalOpen(true);
             }}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded border border-line bg-terminal-bg px-2.5 py-1 font-mono text-[11px] text-fg hover:border-line-strong"
+            className={`inline-flex min-h-9 items-center gap-2 rounded border px-3 py-1 font-mono text-[11px] font-semibold transition-colors ${
+              geminiApiKey
+                ? 'border-wire-green/50 bg-wire-green/15 text-wire-green hover:bg-wire-green/25'
+                : 'border-line bg-terminal-bg text-fg hover:border-line-strong'
+            }`}
           >
-            <KeyRound
-              className={`size-3.5 ${geminiApiKey ? 'text-wire-green' : 'text-accent'}`}
-              aria-hidden="true"
-            />
-            <span className="hidden sm:inline">
-              {geminiApiKey ? t.controls.apiLive : t.controls.aiCore}
+            {geminiApiKey ? (
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-wire-green opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-wire-green" />
+              </span>
+            ) : (
+              <KeyRound className="size-3.5 text-accent" aria-hidden="true" />
+            )}
+            <span>
+              {geminiApiKey
+                ? locale === 'id'
+                  ? 'API LIVE: TERHUBUNG'
+                  : 'LIVE API: CONNECTED'
+                : t.controls.aiCore}
             </span>
           </button>
 
@@ -1502,6 +1548,17 @@ export function MultiAgentAgencyView() {
                   </div>
                 )}
 
+                {msg.roleLabel?.includes('Live') && (
+                  <div className="mt-2.5 flex items-center gap-1.5 rounded border border-wire-green/40 bg-wire-green/10 px-2.5 py-1.5 font-mono text-[10px] text-wire-green">
+                    <ShieldCheck className="size-3.5 shrink-0" aria-hidden="true" />
+                    <span>
+                      {locale === 'id'
+                        ? 'OTENTIKASI API AKTIF: 100% INFERENSI MODEL DINAMIS DARI AKUN ANDA (BEBAS TEMPLATE STATIS)'
+                        : 'LIVE API ATTESTATION: 100% DYNAMIC MODEL INFERENCE FROM YOUR ACCOUNT (ZERO STATIC TEMPLATES)'}
+                    </span>
+                  </div>
+                )}
+
                 {msg.traces && msg.traces.length > 0 && (
                   <div className="mt-3 space-y-1.5 border-t border-line pt-2.5">
                     <p className="font-mono text-[10px] font-bold uppercase tracking-wider text-wire-cyan">
@@ -1758,6 +1815,40 @@ export function MultiAgentAgencyView() {
                 </div>
               )}
 
+              {verificationResult && verificationResult.ok && (
+                <div className="rounded border border-wire-green/40 bg-wire-green/10 p-3 font-mono text-xs space-y-1.5">
+                  <div className="flex items-center gap-2 font-bold text-wire-green">
+                    <ShieldCheck className="size-4 shrink-0" aria-hidden="true" />
+                    <span>
+                      {locale === 'id'
+                        ? 'KONEKSI LANGSUNG TERVERIFIKASI (HTTP 200 OK)'
+                        : 'DIRECT CONNECTION VERIFIED (HTTP 200 OK)'}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-fg/90 space-y-0.5">
+                    <div>Endpoint: generativelanguage.googleapis.com/v1beta</div>
+                    <div>
+                      Model Terverifikasi:{' '}
+                      <strong className="text-wire-cyan">{verificationResult.model}</strong>
+                    </div>
+                    <div>
+                      Latensi Jaringan:{' '}
+                      <strong className="text-wire-green">{verificationResult.latencyMs}ms</strong>
+                    </div>
+                    {verificationResult.availableModels.length > 0 && (
+                      <div className="text-muted">
+                        Model Aktif pada Akun: {verificationResult.availableModels.join(', ')}
+                      </div>
+                    )}
+                    <div className="text-wire-green/90 pt-1">
+                      {locale === 'id'
+                        ? 'Semua instruksi diproses 100% dinamis melalui inferensi akun Gemini Anda.'
+                        : 'All instructions are processed 100% dynamically via your Gemini account inference.'}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <label className="block">
                 <span className="font-mono text-[10px] uppercase tracking-wider text-muted">
                   {t.modal.keyLabel}
@@ -1765,27 +1856,51 @@ export function MultiAgentAgencyView() {
                 <input
                   type="password"
                   value={apiKeyDraft}
-                  onChange={(e) => setApiKeyDraft(e.target.value)}
+                  onChange={(e) => {
+                    setApiKeyDraft(e.target.value);
+                    setVerificationResult(null);
+                    setApiKeyError(null);
+                  }}
                   placeholder="AIzaSy..."
                   autoComplete="off"
                   className="mt-1.5 h-10 w-full rounded border border-line bg-terminal-bg px-3 font-mono text-xs text-fg outline-none focus:border-wire-cyan"
                 />
               </label>
 
-              <div className="flex items-center justify-end gap-2 pt-2">
+              <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
                 <button
                   type="button"
-                  onClick={() => setApiModalOpen(false)}
-                  className="rounded border border-line px-4 py-2 font-mono text-xs text-muted hover:text-fg"
+                  disabled={isVerifyingKey || !apiKeyDraft.trim()}
+                  onClick={handleTestConnection}
+                  className="inline-flex items-center gap-1.5 rounded border border-wire-cyan/40 bg-wire-cyan/15 px-3 py-2 font-mono text-xs font-semibold text-wire-cyan hover:bg-wire-cyan/25 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
                 >
-                  {t.modal.cancel}
+                  <Activity className="size-3.5" aria-hidden="true" />
+                  <span>
+                    {isVerifyingKey
+                      ? locale === 'id'
+                        ? 'Menguji Koneksi...'
+                        : 'Testing Connection...'
+                      : locale === 'id'
+                      ? 'Uji Koneksi API Langsung'
+                      : 'Test Direct Connection'}
+                  </span>
                 </button>
-                <button
-                  type="submit"
-                  className="rounded bg-wire-cyan px-4 py-2 font-mono text-xs font-bold text-bg"
-                >
-                  {t.modal.save}
-                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setApiModalOpen(false)}
+                    className="rounded border border-line px-4 py-2 font-mono text-xs text-muted hover:text-fg"
+                  >
+                    {t.modal.cancel}
+                  </button>
+                  <button
+                    type="submit"
+                    className="rounded bg-wire-cyan px-4 py-2 font-mono text-xs font-bold text-bg hover:brightness-110"
+                  >
+                    {t.modal.save}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
