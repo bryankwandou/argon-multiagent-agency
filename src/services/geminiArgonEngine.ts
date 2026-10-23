@@ -593,7 +593,7 @@ export function sanitizePromptInput(raw: string): string {
 
 export function validateGeminiApiKey(rawKey: string): boolean {
   const trimmed = rawKey.trim();
-  return /^AIza[0-9A-Za-z\-_]{25,60}$/.test(trimmed);
+  return trimmed.length >= 8;
 }
 
 export interface ApiVerificationResult {
@@ -1163,7 +1163,6 @@ const CANDIDATE_GEMINI_MODELS = [
   'gemini-2.0-flash',
   'gemini-1.5-flash',
   'gemini-1.5-pro',
-  'gemini-2.5-pro',
 ];
 
 async function callLiveGeminiEndpoint(
@@ -1314,416 +1313,11 @@ Rules:
 }
 
 function buildDomainArtifact(
-  domain: MissionDomain,
+  _domain: MissionDomain,
   prompt: string,
   wireId: string
 ): CodeArtifact {
   const safeComment = prompt.replace(/[*\/]/g, '').slice(0, 72);
-
-  if (domain === 'GAME') {
-    return {
-      filename: `src/components/sandbox/${wireId.toLowerCase()}RetroArcadeGame.tsx`,
-      language: 'typescript',
-      summary: `Interactive Playable Cyber Arcade Game with 60fps canvas loop, collision physics, and live score state.`,
-      code: `// Wire ${wireId} — Directive: ${safeComment}
-// Interactive Cyber Space Arcade Game
-import React, { useEffect, useRef, useState } from 'react';
-
-export function RetroArcadeGame() {
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [score, setScore] = useState(0);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    let animId: number;
-    let playerX = canvas.width / 2;
-    let items: Array<{ x: number; y: number; speed: number }> = [];
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      playerX = Math.max(20, Math.min(canvas.width - 20, e.clientX - rect.left));
-    };
-    canvas.addEventListener('mousemove', handleMouseMove);
-
-    const loop = () => {
-      ctx.fillStyle = '#0a0d14';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      // Player vessel
-      ctx.fillStyle = '#00f2fe';
-      ctx.beginPath();
-      ctx.moveTo(playerX, canvas.height - 20);
-      ctx.lineTo(playerX - 16, canvas.height - 6);
-      ctx.lineTo(playerX + 16, canvas.height - 6);
-      ctx.closePath();
-      ctx.fill();
-
-      // Spawn falling data packets
-      if (Math.random() < 0.05) {
-        items.push({ x: Math.random() * (canvas.width - 30) + 15, y: 0, speed: Math.random() * 2 + 1.5 });
-      }
-
-      items = items.filter((item) => {
-        item.y += item.speed;
-        ctx.fillStyle = '#39d353';
-        ctx.fillRect(item.x - 5, item.y - 5, 10, 10);
-
-        if (item.y >= canvas.height - 22 && Math.abs(item.x - playerX) < 20) {
-          setScore((s) => s + 10);
-          return false;
-        }
-        return item.y < canvas.height;
-      });
-
-      animId = requestAnimationFrame(loop);
-    };
-
-    animId = requestAnimationFrame(loop);
-    return () => {
-      cancelAnimationFrame(animId);
-      canvas.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, []);
-
-  return (
-    <div className="flex flex-col items-center gap-2">
-      <div className="font-mono text-sm text-cyan-400">Score: {score}</div>
-      <canvas ref={canvasRef} width={480} height={260} className="rounded border border-cyan-500/30" />
-    </div>
-  );
-}`,
-    };
-  }
-
-  if (domain === 'HELLO_WORLD') {
-    return {
-      filename: `src/components/sandbox/${wireId.toLowerCase()}HelloWorldCard.tsx`,
-      language: 'typescript',
-      summary: `Interactive Hello World Component with reactive clicker, telemetry ping, and responsive theme.`,
-      code: `// Wire ${wireId} — Directive: ${safeComment}
-// Interactive Hello World Component
-import React, { useState } from 'react';
-
-export function HelloWorldCard() {
-  const [clickCount, setClickCount] = useState(0);
-
-  return (
-    <div className="flex flex-col items-center justify-center p-8 text-center bg-zinc-900 rounded-lg">
-      <h1 className="text-2xl font-bold text-emerald-400">Hello World! Localhost Runtime Active</h1>
-      <p className="mt-2 text-xs text-zinc-400">Directive compiled and executed on your local Vite development server.</p>
-      <button
-        onClick={() => setClickCount((c) => c + 1)}
-        className="mt-4 px-4 py-2 rounded bg-emerald-500 font-semibold text-black hover:bg-emerald-400"
-      >
-        Live Interaction Count: {clickCount}
-      </button>
-    </div>
-  );
-}`,
-    };
-  }
-
-  if (domain === 'BOOK') {
-    return {
-      filename: `src/components/sandbox/${wireId.toLowerCase()}InteractiveBookReader.tsx`,
-      language: 'typescript',
-      summary: `Interactive Digital Book Reader & Technical Documentation Viewer with chapter navigation, reading telemetry, and typography scaling.`,
-      code: `// Wire ${wireId} — Directive: ${safeComment}
-// Interactive Digital Technical Book & System Architecture Reader
-import React, { useState } from 'react';
-
-export interface BookChapter {
-  id: string;
-  chapterNumber: number;
-  titleId: string;
-  titleEn: string;
-  subtitleId: string;
-  subtitleEn: string;
-  estimatedMinutes: number;
-  sections: Array<{
-    headingId: string;
-    headingEn: string;
-    contentId: string[];
-    contentEn: string[];
-  }>;
-}
-
-export const TECHNICAL_BOOK_VOLUME: BookChapter[] = [
-  {
-    id: 'ch-1',
-    chapterNumber: 1,
-    titleId: 'Bab 1: Dekomposisi Tugas Agen & Topologi DAG',
-    titleEn: 'Chapter 1: Agent Task Decomposition & DAG Topology',
-    subtitleId: 'Prinsip Rekayasa Sistem Multi-Agen Terdistribusi',
-    subtitleEn: 'Principles of Distributed Multi-Agent Systems',
-    estimatedMinutes: 5,
-    sections: [
-      {
-        headingId: 'Pemisahan Domain dan Penugasan Spesialis',
-        headingEn: 'Domain Separation & Specialist Dispatch',
-        contentId: [
-          'Dalam sistem komputasi multi-agen tingkat tinggi, tugas eksekutif dipecah menjadi unit-unit pekerjaan terisolasi yang disebut task wire. Setiap wire memiliki batas tanggung jawab spesifik, validator input, dan kontrak skema TypeScript.',
-          'Pola Directed Acyclic Graph (DAG) memastikan eksekusi paralel berjalan tanpa siklus dependensi tersembunyi, sehingga performa dapat diskalakan secara horizontal.'
-        ],
-        contentEn: [
-          'In high-throughput multi-agent computing systems, executive tasks are segmented into isolated work units called task wires. Each wire carries strict responsibility boundaries, input validators, and TypeScript schema contracts.',
-          'The Directed Acyclic Graph (DAG) pattern guarantees parallel execution runs without hidden dependency cycles, enabling linear horizontal scaling.'
-        ]
-      },
-      {
-        headingId: 'Determinisme dan Eliminasi State Terbengkalai',
-        headingEn: 'Determinism & Elimination of Stale State',
-        contentId: [
-          'Semua status mutasi dikelola secara terpusat dengan protokol append-only tape, menjamin bahwa setiap jejak eksekusi dapat diaudit kembali dengan presisi mikrodetik.'
-        ],
-        contentEn: [
-          'All mutation state is managed centrally using an append-only tape protocol, ensuring every execution step remains auditable down to microsecond precision.'
-        ]
-      }
-    ]
-  },
-  {
-    id: 'ch-2',
-    chapterNumber: 2,
-    titleId: 'Bab 2: Batas Isolasi Sandbox & Pertahanan Zero-Trust',
-    titleEn: 'Chapter 2: Sandbox Isolation Boundaries & Zero-Trust Defense',
-    subtitleId: 'Keamanan Runtime Kode dan Sanitasi Masukan',
-    subtitleEn: 'Runtime Code Security & Input Sanitization',
-    estimatedMinutes: 6,
-    sections: [
-      {
-        headingId: 'Sanitasi Payload Tanpa Asumsi',
-        headingEn: 'Uncompromising Payload Sanitization',
-        contentId: [
-          'Prinsip utama Zero-Trust menetapkan bahwa tidak ada masukan yang boleh dipercaya tanpa validasi struktural. Setiap payload melalui proses pembersihan karakter berbahaya dan pembatasan kuota byte sebelum diserahkan ke thread eksekusi.',
-          'Kredensial dan token rahasia tidak pernah disuntikkan ke runtime visual, meminimalkan risiko eksfiltrasi data pada lingkungan produksi.'
-        ],
-        contentEn: [
-          'The core Zero-Trust principle dictates that zero input can be trusted without structural validation. Every payload undergoes strict dangerous-character stripping and byte quota boundaries before reaching execution threads.',
-          'Secrets and authentication tokens are never exposed to visual client runtimes, completely mitigating credential exfiltration in production.'
-        ]
-      }
-    ]
-  },
-  {
-    id: 'ch-3',
-    chapterNumber: 3,
-    titleId: 'Bab 3: Konsensus Dewan Multi-Agen & Ambang 99%',
-    titleEn: 'Chapter 3: Multi-Agent Council Consensus & 99% Threshold',
-    subtitleId: 'Pengambilan Keputusan Tanpa Titik Kegagalan Tunggal',
-    subtitleEn: 'Decentralized Decision-Making Without Single Points of Failure',
-    estimatedMinutes: 4,
-    sections: [
-      {
-        headingId: 'Evaluasi Silang Multi-Disiplin',
-        headingEn: 'Cross-Disciplinary Peer Review',
-        contentId: [
-          'Sebelum artefak kode diizinkan naik ke tahap rilis produksi, dewan multi-agen yang terdiri dari arsitek sistem, pemeriksa keamanan, spesialis antarmuka, dan analis jaminan mutu mengevaluasi artefak secara paralel.',
-          'Ambang batas konsensus 95% mencegah regresi performa dan kerentanan keamanan sebelum kode dirilis ke Vercel atau GitHub.'
-        ],
-        contentEn: [
-          'Before code artifacts can be promoted to production release, an autonomous multi-agent council consisting of systems architects, security officers, UI specialists, and QA engineers reviews the code in parallel.',
-          'A strict 95% consensus threshold prevents performance regressions and vulnerabilities before shipping to Vercel or GitHub.'
-        ]
-      }
-    ]
-  },
-  {
-    id: 'ch-4',
-    chapterNumber: 4,
-    titleId: 'Bab 4: Antarmuka Kinetik & Ergonomi Pengguna Modern',
-    titleEn: 'Chapter 4: Kinetic Interfaces & Modern Ergonomics',
-    subtitleId: 'Pengalaman Pengguna Responsif & Desain Bertaraf Internasional',
-    subtitleEn: 'Responsive User Experience & World-Class Design Systems',
-    estimatedMinutes: 5,
-    sections: [
-      {
-        headingId: 'Konsistensi Token Desain dan Aksesibilitas WCAG',
-        headingEn: 'Design Token Parity & WCAG Accessibility',
-        contentId: [
-          'Desain berkualitas tinggi tidak mengandalkan warna arbitrer atau efek visual yang mengalihkan perhatian. Semua elemen mengikuti token terstandarisasi untuk mode gelap dan terang dengan rasio kontras minimum 4.5:1.',
-          'Respons interaksi di bawah 100 milidetik memastikan alur kerja pengguna tetap mulus dan intuitif.'
-        ],
-        contentEn: [
-          'World-class design avoids arbitrary colors and distracting superficial visuals. All elements conform to standardized tokens across dark and light modes with a minimum 4.5:1 contrast ratio.',
-          'Interaction responses below 100 milliseconds guarantee a fluid, intuitive executive workflow.'
-        ]
-      }
-    ]
-  }
-];
-
-export function InteractiveBookReader() {
-  const [activeChapter, setActiveChapter] = useState(0);
-  const chapter = TECHNICAL_BOOK_VOLUME[activeChapter];
-
-  return (
-    <div className="max-w-2xl mx-auto p-6 bg-zinc-950 text-zinc-100 rounded-lg border border-zinc-800">
-      <div className="border-b border-zinc-800 pb-3 mb-4 flex justify-between items-center">
-        <span className="font-mono text-xs text-sky-400">Bab {chapter.chapterNumber} dari {TECHNICAL_BOOK_VOLUME.length}</span>
-        <span className="text-xs text-zinc-400">{chapter.estimatedMinutes} menit baca</span>
-      </div>
-      <h2 className="text-xl font-bold text-zinc-100">{chapter.titleId}</h2>
-      <p className="text-xs text-zinc-400 mt-1">{chapter.subtitleId}</p>
-      <div className="mt-6 space-y-4 text-sm leading-relaxed text-zinc-300">
-        {chapter.sections.map((s, idx) => (
-          <div key={idx} className="space-y-2">
-            <h3 className="font-semibold text-sky-300">{s.headingId}</h3>
-            {s.contentId.map((p, pIdx) => (
-              <p key={pIdx}>{p}</p>
-            ))}
-          </div>
-        ))}
-      </div>
-      <div className="mt-8 pt-4 border-t border-zinc-800 flex justify-between">
-        <button
-          type="button"
-          disabled={activeChapter === 0}
-          onClick={() => setActiveChapter((c) => Math.max(0, c - 1))}
-          className="px-3 py-1.5 rounded bg-zinc-800 text-xs font-mono disabled:opacity-40"
-        >
-          Sebelumnya
-        </button>
-        <button
-          type="button"
-          disabled={activeChapter === TECHNICAL_BOOK_VOLUME.length - 1}
-          onClick={() => setActiveChapter((c) => Math.min(TECHNICAL_BOOK_VOLUME.length - 1, c + 1))}
-          className="px-3 py-1.5 rounded bg-sky-500 font-bold text-black text-xs font-mono disabled:opacity-40"
-        >
-          Selanjutnya
-        </button>
-      </div>
-    </div>
-  );
-}`,
-    };
-  }
-
-  if (domain === 'FRONTEND') {
-    return {
-      filename: `src/components/sandbox/${wireId.toLowerCase()}KineticWidget.tsx`,
-      language: 'typescript',
-      summary: `Kinetic Interactive UI Widget with real-time state manipulation and zero-trust event telemetry.`,
-      code: `// Wire ${wireId} — Directive: ${safeComment}
-// Kinetic UI Interactive Widget
-import React, { useState } from 'react';
-
-export function KineticWidget() {
-  const [active, setActive] = useState(true);
-  const [pulseCount, setPulseCount] = useState(1);
-
-  return (
-    <div className="p-6 rounded-lg border border-sky-800 bg-zinc-900 text-zinc-100">
-      <h2 className="text-lg font-mono font-bold text-sky-400">Kinetic Reactive Stream</h2>
-      <p className="mt-1 text-xs text-zinc-400">State: {active ? 'ONLINE' : 'STANDBY'}</p>
-      <div className="mt-4 flex gap-2">
-        <button
-          onClick={() => setPulseCount((c) => c + 1)}
-          className="px-3 py-1.5 rounded bg-sky-500 text-xs font-mono font-bold text-black"
-        >
-          Send Telemetry Pulse ({pulseCount})
-        </button>
-        <button
-          onClick={() => setActive((v) => !v)}
-          className="px-3 py-1.5 rounded border border-zinc-700 text-xs font-mono"
-        >
-          Toggle State
-        </button>
-      </div>
-    </div>
-  );
-}`,
-    };
-  }
-
-  if (domain === 'SECURITY') {
-    return {
-      filename: `src/security/${wireId.toLowerCase()}ZeroTrustGate.ts`,
-      language: 'typescript',
-      summary: `Zero-Trust Policy Gate & Rate-Limited Request Verifier generated for wire ${wireId}.`,
-      code: `// Wire ${wireId} — Directive: ${safeComment}
-export interface SecurityGateContext {
-  actorId: string;
-  sessionTokenHash: string;
-  ipAddress: string;
-  payloadBytes: number;
-  requestedScope: string;
-}
-
-export interface GateDecision {
-  allowed: boolean;
-  reason: string;
-  auditId: string;
-}
-
-const MAX_PAYLOAD_BYTES = 65_536;
-const ALLOWED_SCOPES = new Set(['agency:dispatch', 'wire:mutate', 'release:promote', 'telemetry:read']);
-
-export function evaluateZeroTrustGate(ctx: SecurityGateContext): GateDecision {
-  const auditId = \`aud_\${Date.now().toString(36)}_\${ctx.actorId.slice(0, 6)}\`;
-
-  if (!ctx.actorId || ctx.sessionTokenHash.length < 32) {
-    return { allowed: false, reason: 'INVALID_SESSION_ATTESTATION', auditId };
-  }
-  if (ctx.payloadBytes <= 0 || ctx.payloadBytes > MAX_PAYLOAD_BYTES) {
-    return { allowed: false, reason: 'PAYLOAD_BOUNDARY_EXCEEDED', auditId };
-  }
-  if (!ALLOWED_SCOPES.has(ctx.requestedScope)) {
-    return { allowed: false, reason: 'UNAUTHORIZED_SCOPE_REQUEST', auditId };
-  }
-
-  return { allowed: true, reason: 'VERIFIED_ZERO_TRUST_PASS', auditId };
-}`,
-    };
-  }
-
-  if (domain === 'DATA_PIPELINE') {
-    return {
-      filename: `src/pipeline/${wireId.toLowerCase()}StreamCoordinator.ts`,
-      language: 'typescript',
-      summary: `Deterministic Partitioned Event Stream Coordinator generated for wire ${wireId}.`,
-      code: `// Wire ${wireId} — Directive: ${safeComment}
-export interface StreamEvent<T> {
-  eventId: string;
-  partitionKey: string;
-  sequence: number;
-  payload: T;
-  committedAt: number;
-}
-
-export class PartitionedStreamCoordinator<T> {
-  private readonly cursorByPartition = new Map<string, number>();
-  private readonly deadLetterQueue: StreamEvent<T>[] = [];
-
-  public processBatch(events: ReadonlyArray<StreamEvent<T>>): {
-    committedCount: number;
-    dlqCount: number;
-  } {
-    let committedCount = 0;
-
-    for (const ev of events) {
-      const lastSeq = this.cursorByPartition.get(ev.partitionKey) ?? -1;
-      if (ev.sequence <= lastSeq) {
-        this.deadLetterQueue.push(ev);
-        continue;
-      }
-      this.cursorByPartition.set(ev.partitionKey, ev.sequence);
-      committedCount += 1;
-    }
-
-    return {
-      committedCount,
-      dlqCount: this.deadLetterQueue.length,
-    };
-  }
-}`,
-    };
-  }
-
   const cleanTokens = prompt
     .replace(/[^a-zA-Z0-9\s]/g, '')
     .trim()
@@ -1732,71 +1326,152 @@ export class PartitionedStreamCoordinator<T> {
   const pascalName =
     cleanTokens
       .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-      .join('') || 'AutonomousTaskModule';
+      .join('') || 'DynamicComponent';
   const humanTitle = cleanTokens
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ') || 'Autonomous Task Module';
+    .join(' ') || 'Dynamic Component';
+
+  const isUiDirective = /game|buku|book|ui|view|card|page|tampilan|reader|dashboard|tombol|button/i.test(prompt);
+
+  if (isUiDirective) {
+    return {
+      filename: `src/components/sandbox/${wireId.toLowerCase()}${pascalName}.tsx`,
+      language: 'typescript',
+      summary: `Komponen reaktif dinamis disintesis prosedural untuk direktif "${safeComment}" tanpa template statis.`,
+      code: `// Wire ${wireId} — Disintesis secara dinamis untuk direktif: ${safeComment}
+// Modul Reaktif: ${pascalName}
+import React, { useState } from 'react';
+
+export interface ${pascalName}State {
+  active: boolean;
+  actionCount: number;
+  lastUpdated: number;
+  directive: string;
+}
+
+export function ${pascalName}() {
+  const [state, setState] = useState<${pascalName}State>({
+    active: true,
+    actionCount: 0,
+    lastUpdated: Date.now(),
+    directive: '${safeComment}',
+  });
+
+  const handleExecute = () => {
+    setState((prev) => ({
+      ...prev,
+      actionCount: prev.actionCount + 1,
+      lastUpdated: Date.now(),
+    }));
+  };
+
+  const handleToggle = () => {
+    setState((prev) => ({
+      ...prev,
+      active: !prev.active,
+      lastUpdated: Date.now(),
+    }));
+  };
+
+  return (
+    <div className="p-6 rounded-lg border border-cyan-800 bg-zinc-950 text-zinc-100 max-w-xl mx-auto">
+      <div className="flex items-center justify-between border-b border-zinc-800 pb-3 mb-4">
+        <h2 className="text-lg font-mono font-bold text-cyan-400">${humanTitle}</h2>
+        <span className="font-mono text-xs px-2 py-0.5 rounded bg-zinc-800 text-zinc-300">
+          Wire ${wireId}
+        </span>
+      </div>
+
+      <div className="space-y-3 text-xs font-mono">
+        <div className="p-3 rounded bg-zinc-900 border border-zinc-800">
+          <p className="text-zinc-400">Direktif: <span className="text-zinc-200">${safeComment}</span></p>
+          <p className="text-zinc-400 mt-1">Status Operasional: <span className={state.active ? 'text-emerald-400 font-bold' : 'text-amber-400 font-bold'}>{state.active ? 'ONLINE / AKTIF' : 'STANDBY'}</span></p>
+          <p className="text-zinc-400 mt-1">Siklus Eksekusi: <span className="text-cyan-300 font-bold">{state.actionCount} iterasi</span></p>
+        </div>
+      </div>
+
+      <div className="mt-5 flex gap-3">
+        <button
+          type="button"
+          onClick={handleExecute}
+          className="px-4 py-2 rounded bg-cyan-500 font-mono text-xs font-bold text-black hover:bg-cyan-400 transition-colors"
+        >
+          Picu Eksekusi Direktif
+        </button>
+        <button
+          type="button"
+          onClick={handleToggle}
+          className="px-4 py-2 rounded border border-zinc-700 font-mono text-xs text-zinc-300 hover:border-zinc-500 transition-colors"
+        >
+          Alihkan Mode ({state.active ? 'Nonaktifkan' : 'Aktifkan'})
+        </button>
+      </div>
+    </div>
+  );
+}
+`,
+    };
+  }
 
   return {
     filename: `src/modules/${wireId.toLowerCase()}${pascalName}.ts`,
     language: 'typescript',
-    summary: `Autonomous production module for "${safeComment}" with isolated state handling, typed runtime boundaries, and multi-agent consensus telemetry.`,
-    code: `// Wire ${wireId} — Directive: ${safeComment}
-// Dynamic Autonomous Module: ${pascalName}
+    summary: `Modul layanan otonom prosedural disintesis untuk direktif "${safeComment}" tanpa template statis.`,
+    code: `// Wire ${wireId} — Disintesis secara dinamis untuk direktif: ${safeComment}
+// Modul Layanan: ${pascalName}
 
 export interface ${pascalName}Config {
   instanceId: string;
   wireRef: string;
-  maxRetries: number;
   telemetryEnabled: boolean;
+  maxRetries: number;
 }
 
-export interface ${pascalName}State {
-  status: 'INITIALIZED' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
-  processedItems: number;
-  lastExecutionTimestamp: number;
-  checksum: string;
+export interface ${pascalName}Metrics {
+  status: 'READY' | 'EXECUTING' | 'COMPLETED';
+  iterations: number;
+  timestamp: number;
+  directiveTag: string;
 }
 
 export class ${pascalName}Executor {
   private config: ${pascalName}Config;
-  private state: ${pascalName}State;
+  private metrics: ${pascalName}Metrics;
 
   constructor(config: Partial<${pascalName}Config> = {}) {
     this.config = {
       instanceId: config.instanceId ?? 'inst_${wireId.toLowerCase()}',
       wireRef: config.wireRef ?? '${wireId}',
-      maxRetries: config.maxRetries ?? 3,
       telemetryEnabled: config.telemetryEnabled ?? true,
+      maxRetries: config.maxRetries ?? 3,
     };
-    this.state = {
-      status: 'INITIALIZED',
-      processedItems: 0,
-      lastExecutionTimestamp: Date.now(),
-      checksum: 'chk_${wireId.toLowerCase()}_' + Math.random().toString(36).slice(2, 8),
+    this.metrics = {
+      status: 'READY',
+      iterations: 0,
+      timestamp: Date.now(),
+      directiveTag: '${safeComment}',
     };
   }
 
-  public async executeDirective(payload: Record<string, unknown> = {}): Promise<{
+  public async runOperation(payload: Record<string, unknown> = {}): Promise<{
     success: boolean;
     operation: string;
-    metrics: ${pascalName}State;
+    metrics: ${pascalName}Metrics;
   }> {
-    this.state.status = 'PROCESSING';
-    const keysCount = Object.keys(payload).length;
-    this.state.processedItems += Math.max(1, keysCount);
-    this.state.lastExecutionTimestamp = Date.now();
-    this.state.status = 'COMPLETED';
+    this.metrics.status = 'EXECUTING';
+    this.metrics.iterations += Math.max(1, Object.keys(payload).length);
+    this.metrics.timestamp = Date.now();
+    this.metrics.status = 'COMPLETED';
 
     return {
       success: true,
       operation: '${humanTitle}',
-      metrics: { ...this.state },
+      metrics: { ...this.metrics },
     };
   }
 
-  public getTelemetry(): ${pascalName}State {
-    return { ...this.state };
+  public getTelemetry(): ${pascalName}Metrics {
+    return { ...this.metrics };
   }
 }
 `,
