@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
   Activity,
+  BookOpen,
   Bot,
   ChevronDown,
   ChevronUp,
@@ -594,12 +595,15 @@ export function MultiAgentAgencyView() {
 
       setMessages((prev) => [...prev, responseMsg]);
 
-      // Auto-switch center tab to ARTIFACTS for games/visual components so the user sees results immediately
+      // Auto-switch center tab to ARTIFACTS for games/books/visual components so the user sees results immediately
       if (
         plan.artifact &&
         (plan.artifact.filename.toLowerCase().includes('game') ||
           plan.artifact.filename.toLowerCase().includes('hello') ||
-          plan.artifact.filename.toLowerCase().includes('hi'))
+          plan.artifact.filename.toLowerCase().includes('hi') ||
+          plan.artifact.filename.toLowerCase().includes('book') ||
+          plan.artifact.filename.toLowerCase().includes('buku') ||
+          plan.artifact.filename.toLowerCase().includes('reader'))
       ) {
         setCenterTab('ARTIFACTS');
       }
@@ -1574,10 +1578,13 @@ export function MultiAgentAgencyView() {
                       </div>
                     </div>
 
-                    {/* Prominent Play Game Banner */}
+                    {/* Prominent Play Game / Read Book Banner */}
                     {(msg.artifact.filename.toLowerCase().includes('game') ||
                       msg.artifact.filename.toLowerCase().includes('hello') ||
-                      msg.artifact.filename.toLowerCase().includes('hi')) && (
+                      msg.artifact.filename.toLowerCase().includes('hi') ||
+                      msg.artifact.filename.toLowerCase().includes('book') ||
+                      msg.artifact.filename.toLowerCase().includes('buku') ||
+                      msg.artifact.filename.toLowerCase().includes('reader')) && (
                       <button
                         type="button"
                         onClick={() => {
@@ -1588,11 +1595,25 @@ export function MultiAgentAgencyView() {
                         }}
                         className="mt-2.5 flex w-full items-center justify-center gap-2 rounded border border-wire-green/40 bg-wire-green/15 py-2 font-mono text-xs font-bold text-wire-green hover:bg-wire-green/25 active:scale-98 transition-all"
                       >
-                        <Gamepad2 className="size-4" aria-hidden="true" />
+                        {msg.artifact.filename.toLowerCase().includes('book') ||
+                        msg.artifact.filename.toLowerCase().includes('buku') ||
+                        msg.artifact.filename.toLowerCase().includes('reader') ? (
+                          <BookOpen className="size-4" aria-hidden="true" />
+                        ) : msg.artifact.filename.toLowerCase().includes('game') ? (
+                          <Gamepad2 className="size-4" aria-hidden="true" />
+                        ) : (
+                          <Zap className="size-4" aria-hidden="true" />
+                        )}
                         <span>
-                          {locale === 'id'
-                            ? '▶ Buka Layar Penuh & Mainkan Game Sekarang'
-                            : '▶ Open Fullscreen & Play Game Now'}
+                          {msg.artifact.filename.toLowerCase().includes('book') ||
+                          msg.artifact.filename.toLowerCase().includes('buku') ||
+                          msg.artifact.filename.toLowerCase().includes('reader')
+                            ? locale === 'id'
+                              ? '[BUKA & BACA BUKU DIGITAL INTERAKTIF]'
+                              : '[OPEN & READ INTERACTIVE DIGITAL BOOK]'
+                            : locale === 'id'
+                            ? '[BUKA LAYAR PENUH & MAINKAN SEKARANG]'
+                            : '[OPEN FULLSCREEN & PLAY NOW]'}
                         </span>
                       </button>
                     )}

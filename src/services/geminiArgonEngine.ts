@@ -633,6 +633,7 @@ export type MissionDomain =
   | 'GAME'
   | 'HELLO_WORLD'
   | 'DATA_PIPELINE'
+  | 'BOOK'
   | 'FULLSTACK_AGENCY';
 
 function detectMissionDomain(prompt: string): MissionDomain {
@@ -655,6 +656,19 @@ function detectMissionDomain(prompt: string): MissionDomain {
     lower.includes('halo')
   ) {
     return 'HELLO_WORLD';
+  }
+  if (
+    lower.includes('buku') ||
+    lower.includes('book') ||
+    lower.includes('novel') ||
+    lower.includes('reader') ||
+    lower.includes('pustaka') ||
+    lower.includes('dokumen') ||
+    lower.includes('bacaan') ||
+    lower.includes('manual') ||
+    lower.includes('ebook')
+  ) {
+    return 'BOOK';
   }
   if (
     lower.includes('security') ||
@@ -723,6 +737,8 @@ export async function executeGeminiArgonMission(params: {
       ? ['ORCH-01', 'UIX-03', 'ARCH-02', 'EXEC-07', 'QA-08', 'DOC-09']
       : domain === 'DATA_PIPELINE'
       ? ['ORCH-01', 'DATA-04', 'ARCH-02', 'RES-06', 'EXEC-07', 'SRE-10']
+      : domain === 'BOOK'
+      ? ['ORCH-01', 'DOC-09', 'ARCH-02', 'UIX-03', 'EXEC-07', 'QA-08']
       : [
           'ORCH-01',
           'ARCH-02',
@@ -843,6 +859,8 @@ export async function executeGeminiArgonMission(params: {
           ? 'UIX-03'
           : domain === 'DATA_PIPELINE'
           ? 'DATA-04'
+          : domain === 'BOOK'
+          ? 'DOC-09'
           : 'EXEC-07',
       dependencies: [wireIdArch],
       priority: params.priority,
@@ -903,12 +921,16 @@ export async function executeGeminiArgonMission(params: {
           ? 'UIX-03'
           : domain === 'DATA_PIPELINE'
           ? 'DATA-04'
+          : domain === 'BOOK'
+          ? 'DOC-09'
           : 'EXEC-07',
       agentName:
         domain === 'FRONTEND'
           ? 'Kinetic UI Lead'
           : domain === 'DATA_PIPELINE'
           ? 'Data Mesh Lead'
+          : domain === 'BOOK'
+          ? 'Ship-Log Chronicler'
           : 'Sandbox Executor',
       roleLabel:
         params.locale === 'id' ? 'Eksekutor Spesialis' : 'Specialist Executor',
@@ -1190,6 +1212,182 @@ export function HelloWorldCard() {
       >
         Live Interaction Count: {clickCount}
       </button>
+    </div>
+  );
+}`,
+    };
+  }
+
+  if (domain === 'BOOK') {
+    return {
+      filename: `src/components/sandbox/${wireId.toLowerCase()}InteractiveBookReader.tsx`,
+      language: 'typescript',
+      summary: `Interactive Digital Book Reader & Technical Documentation Viewer with chapter navigation, reading telemetry, and typography scaling.`,
+      code: `// Wire ${wireId} — Directive: ${safeComment}
+// Interactive Digital Technical Book & System Architecture Reader
+import React, { useState } from 'react';
+
+export interface BookChapter {
+  id: string;
+  chapterNumber: number;
+  titleId: string;
+  titleEn: string;
+  subtitleId: string;
+  subtitleEn: string;
+  estimatedMinutes: number;
+  sections: Array<{
+    headingId: string;
+    headingEn: string;
+    contentId: string[];
+    contentEn: string[];
+  }>;
+}
+
+export const TECHNICAL_BOOK_VOLUME: BookChapter[] = [
+  {
+    id: 'ch-1',
+    chapterNumber: 1,
+    titleId: 'Bab 1: Dekomposisi Tugas Agen & Topologi DAG',
+    titleEn: 'Chapter 1: Agent Task Decomposition & DAG Topology',
+    subtitleId: 'Prinsip Rekayasa Sistem Multi-Agen Terdistribusi',
+    subtitleEn: 'Principles of Distributed Multi-Agent Systems',
+    estimatedMinutes: 5,
+    sections: [
+      {
+        headingId: 'Pemisahan Domain dan Penugasan Spesialis',
+        headingEn: 'Domain Separation & Specialist Dispatch',
+        contentId: [
+          'Dalam sistem komputasi multi-agen tingkat tinggi, tugas eksekutif dipecah menjadi unit-unit pekerjaan terisolasi yang disebut task wire. Setiap wire memiliki batas tanggung jawab spesifik, validator input, dan kontrak skema TypeScript.',
+          'Pola Directed Acyclic Graph (DAG) memastikan eksekusi paralel berjalan tanpa siklus dependensi tersembunyi, sehingga performa dapat diskalakan secara horizontal.'
+        ],
+        contentEn: [
+          'In high-throughput multi-agent computing systems, executive tasks are segmented into isolated work units called task wires. Each wire carries strict responsibility boundaries, input validators, and TypeScript schema contracts.',
+          'The Directed Acyclic Graph (DAG) pattern guarantees parallel execution runs without hidden dependency cycles, enabling linear horizontal scaling.'
+        ]
+      },
+      {
+        headingId: 'Determinisme dan Eliminasi State Terbengkalai',
+        headingEn: 'Determinism & Elimination of Stale State',
+        contentId: [
+          'Semua status mutasi dikelola secara terpusat dengan protokol append-only tape, menjamin bahwa setiap jejak eksekusi dapat diaudit kembali dengan presisi mikrodetik.'
+        ],
+        contentEn: [
+          'All mutation state is managed centrally using an append-only tape protocol, ensuring every execution step remains auditable down to microsecond precision.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'ch-2',
+    chapterNumber: 2,
+    titleId: 'Bab 2: Batas Isolasi Sandbox & Pertahanan Zero-Trust',
+    titleEn: 'Chapter 2: Sandbox Isolation Boundaries & Zero-Trust Defense',
+    subtitleId: 'Keamanan Runtime Kode dan Sanitasi Masukan',
+    subtitleEn: 'Runtime Code Security & Input Sanitization',
+    estimatedMinutes: 6,
+    sections: [
+      {
+        headingId: 'Sanitasi Payload Tanpa Asumsi',
+        headingEn: 'Uncompromising Payload Sanitization',
+        contentId: [
+          'Prinsip utama Zero-Trust menetapkan bahwa tidak ada masukan yang boleh dipercaya tanpa validasi struktural. Setiap payload melalui proses pembersihan karakter berbahaya dan pembatasan kuota byte sebelum diserahkan ke thread eksekusi.',
+          'Kredensial dan token rahasia tidak pernah disuntikkan ke runtime visual, meminimalkan risiko eksfiltrasi data pada lingkungan produksi.'
+        ],
+        contentEn: [
+          'The core Zero-Trust principle dictates that zero input can be trusted without structural validation. Every payload undergoes strict dangerous-character stripping and byte quota boundaries before reaching execution threads.',
+          'Secrets and authentication tokens are never exposed to visual client runtimes, completely mitigating credential exfiltration in production.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'ch-3',
+    chapterNumber: 3,
+    titleId: 'Bab 3: Konsensus Dewan Multi-Agen & Ambang 99%',
+    titleEn: 'Chapter 3: Multi-Agent Council Consensus & 99% Threshold',
+    subtitleId: 'Pengambilan Keputusan Tanpa Titik Kegagalan Tunggal',
+    subtitleEn: 'Decentralized Decision-Making Without Single Points of Failure',
+    estimatedMinutes: 4,
+    sections: [
+      {
+        headingId: 'Evaluasi Silang Multi-Disiplin',
+        headingEn: 'Cross-Disciplinary Peer Review',
+        contentId: [
+          'Sebelum artefak kode diizinkan naik ke tahap rilis produksi, dewan multi-agen yang terdiri dari arsitek sistem, pemeriksa keamanan, spesialis antarmuka, dan analis jaminan mutu mengevaluasi artefak secara paralel.',
+          'Ambang batas konsensus 95% mencegah regresi performa dan kerentanan keamanan sebelum kode dirilis ke Vercel atau GitHub.'
+        ],
+        contentEn: [
+          'Before code artifacts can be promoted to production release, an autonomous multi-agent council consisting of systems architects, security officers, UI specialists, and QA engineers reviews the code in parallel.',
+          'A strict 95% consensus threshold prevents performance regressions and vulnerabilities before shipping to Vercel or GitHub.'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'ch-4',
+    chapterNumber: 4,
+    titleId: 'Bab 4: Antarmuka Kinetik & Ergonomi Pengguna Modern',
+    titleEn: 'Chapter 4: Kinetic Interfaces & Modern Ergonomics',
+    subtitleId: 'Pengalaman Pengguna Responsif & Desain Bertaraf Internasional',
+    subtitleEn: 'Responsive User Experience & World-Class Design Systems',
+    estimatedMinutes: 5,
+    sections: [
+      {
+        headingId: 'Konsistensi Token Desain dan Aksesibilitas WCAG',
+        headingEn: 'Design Token Parity & WCAG Accessibility',
+        contentId: [
+          'Desain berkualitas tinggi tidak mengandalkan warna arbitrer atau efek visual yang mengalihkan perhatian. Semua elemen mengikuti token terstandarisasi untuk mode gelap dan terang dengan rasio kontras minimum 4.5:1.',
+          'Respons interaksi di bawah 100 milidetik memastikan alur kerja pengguna tetap mulus dan intuitif.'
+        ],
+        contentEn: [
+          'World-class design avoids arbitrary colors and distracting superficial visuals. All elements conform to standardized tokens across dark and light modes with a minimum 4.5:1 contrast ratio.',
+          'Interaction responses below 100 milliseconds guarantee a fluid, intuitive executive workflow.'
+        ]
+      }
+    ]
+  }
+];
+
+export function InteractiveBookReader() {
+  const [activeChapter, setActiveChapter] = useState(0);
+  const chapter = TECHNICAL_BOOK_VOLUME[activeChapter];
+
+  return (
+    <div className="max-w-2xl mx-auto p-6 bg-zinc-950 text-zinc-100 rounded-lg border border-zinc-800">
+      <div className="border-b border-zinc-800 pb-3 mb-4 flex justify-between items-center">
+        <span className="font-mono text-xs text-sky-400">Bab {chapter.chapterNumber} dari {TECHNICAL_BOOK_VOLUME.length}</span>
+        <span className="text-xs text-zinc-400">{chapter.estimatedMinutes} menit baca</span>
+      </div>
+      <h2 className="text-xl font-bold text-zinc-100">{chapter.titleId}</h2>
+      <p className="text-xs text-zinc-400 mt-1">{chapter.subtitleId}</p>
+      <div className="mt-6 space-y-4 text-sm leading-relaxed text-zinc-300">
+        {chapter.sections.map((s, idx) => (
+          <div key={idx} className="space-y-2">
+            <h3 className="font-semibold text-sky-300">{s.headingId}</h3>
+            {s.contentId.map((p, pIdx) => (
+              <p key={pIdx}>{p}</p>
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="mt-8 pt-4 border-t border-zinc-800 flex justify-between">
+        <button
+          type="button"
+          disabled={activeChapter === 0}
+          onClick={() => setActiveChapter((c) => Math.max(0, c - 1))}
+          className="px-3 py-1.5 rounded bg-zinc-800 text-xs font-mono disabled:opacity-40"
+        >
+          Sebelumnya
+        </button>
+        <button
+          type="button"
+          disabled={activeChapter === TECHNICAL_BOOK_VOLUME.length - 1}
+          onClick={() => setActiveChapter((c) => Math.min(TECHNICAL_BOOK_VOLUME.length - 1, c + 1))}
+          className="px-3 py-1.5 rounded bg-sky-500 font-bold text-black text-xs font-mono disabled:opacity-40"
+        >
+          Selanjutnya
+        </button>
+      </div>
     </div>
   );
 }`,
