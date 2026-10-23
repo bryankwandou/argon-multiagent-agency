@@ -596,6 +596,98 @@ export function validateGeminiApiKey(rawKey: string): boolean {
   return /^AIza[0-9A-Za-z\-_]{25,60}$/.test(trimmed);
 }
 
+export interface ApiVerificationResult {
+  ok: boolean;
+  latencyMs: number;
+  model: string;
+  availableModels: string[];
+  error?: string;
+}
+
+export async function verifyLiveGeminiConnection(
+  apiKey: string,
+  locale: LocaleCode = 'id'
+): Promise<ApiVerificationResult> {
+  const startedAt = performance.now();
+  const cleanKey = apiKey.trim();
+  if (!cleanKey) {
+    return {
+      ok: false,
+      latencyMs: 0,
+      model: '',
+      availableModels: [],
+      error:
+        locale === 'id'
+          ? 'Kunci API Gemini tidak boleh kosong.'
+          : 'Gemini API key cannot be empty.',
+    };
+  }
+
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), 8000);
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(
+        cleanKey
+      )}`,
+      {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+      }
+    );
+
+    const latencyMs = Math.round(performance.now() - startedAt);
+
+    if (!response.ok) {
+      const errJson = (await response.json().catch(() => ({}))) as {
+        error?: { message?: string };
+      };
+      const errMsg =
+        errJson?.error?.message || `HTTP ${response.status} ${response.statusText}`;
+      return { ok: false, latencyMs, model: '', availableModels: [], error: errMsg };
+    }
+
+    const data = (await response.json()) as {
+      models?: Array<{ name: string; displayName?: string }>;
+    };
+
+    const geminiModels = (data.models || [])
+      .map((m) => m.name.replace('models/', ''))
+      .filter((name) => name.includes('gemini'));
+
+    const preferredModel =
+      geminiModels.find((m) => m.includes('2.0-flash')) ||
+      geminiModels.find((m) => m.includes('1.5-flash')) ||
+      geminiModels[0] ||
+      'gemini-2.0-flash';
+
+    return {
+      ok: true,
+      latencyMs,
+      model: preferredModel,
+      availableModels: geminiModels.slice(0, 8),
+    };
+  } catch (err) {
+    const latencyMs = Math.round(performance.now() - startedAt);
+    return {
+      ok: false,
+      latencyMs,
+      model: '',
+      availableModels: [],
+      error:
+        err instanceof Error
+          ? err.message
+          : locale === 'id'
+          ? 'Koneksi jaringan ke endpoint Gemini gagal.'
+          : 'Network connection to Gemini endpoint failed.',
+    };
+  } finally {
+    window.clearTimeout(timeoutId);
+  }
+}
+
 export function generateCommitHash(): string {
   const chars = '0123456789abcdef';
   let result = '';
