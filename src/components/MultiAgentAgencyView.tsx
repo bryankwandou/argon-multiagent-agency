@@ -8,6 +8,7 @@ import {
   Code2,
   Copy,
   Cpu,
+  FileCheck,
   Gamepad2,
   GitBranch,
   GitCommit,
@@ -53,6 +54,7 @@ import {
 } from '../services/geminiArgonEngine';
 import { IsometricOfficeCanvas } from './IsometricOfficeCanvas';
 import { InteractiveSandboxRunner } from './InteractiveSandboxRunner';
+import { TechnicalAttestationModal } from './TechnicalAttestationModal';
 
 type CenterTab = 'FLOOR' | 'DOTS_DAG' | 'GROK_COUNCIL' | 'ARTIFACTS';
 
@@ -210,6 +212,7 @@ export function MultiAgentAgencyView() {
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [isVerifyingKey, setIsVerifyingKey] = useState(false);
   const [verificationResult, setVerificationResult] = useState<ApiVerificationResult | null>(null);
+  const [attestationModalOpen, setAttestationModalOpen] = useState(false);
 
   const [messages, setMessages] = useState<AgencyChatMessage[]>(() => [
     {
@@ -853,6 +856,17 @@ export function MultiAgentAgencyView() {
                   ? 'API LIVE: TERHUBUNG'
                   : 'LIVE API: CONNECTED'
                 : t.controls.aiCore}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setAttestationModalOpen(true)}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded border border-wire-cyan/40 bg-wire-cyan/15 px-2.5 py-1 font-mono text-[11px] font-bold text-wire-cyan hover:bg-wire-cyan/25 transition-colors"
+          >
+            <FileCheck className="size-3.5" aria-hidden="true" />
+            <span className="hidden md:inline">
+              {locale === 'id' ? 'Surat Pernyataan Teknis' : 'Attestation Certificate'}
             </span>
           </button>
 
@@ -1906,6 +1920,13 @@ export function MultiAgentAgencyView() {
           </div>
         </div>
       )}
+
+      <TechnicalAttestationModal
+        isOpen={attestationModalOpen}
+        onClose={() => setAttestationModalOpen(false)}
+        locale={locale}
+        apiKey={geminiApiKey}
+      />
     </div>
   );
 }
