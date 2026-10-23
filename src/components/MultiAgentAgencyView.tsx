@@ -198,7 +198,12 @@ export function MultiAgentAgencyView() {
   const [copiedArtifactId, setCopiedArtifactId] = useState<string | null>(null);
 
   const [apiModalOpen, setApiModalOpen] = useState(false);
-  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [geminiApiKey, setGeminiApiKey] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('argon_gemini_api_key') || '';
+    }
+    return '';
+  });
   const [apiKeyDraft, setApiKeyDraft] = useState('');
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
 
@@ -690,6 +695,9 @@ export function MultiAgentAgencyView() {
     const trimmed = apiKeyDraft.trim();
     if (!trimmed) {
       setGeminiApiKey('');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('argon_gemini_api_key');
+      }
       setApiKeyError(null);
       setApiModalOpen(false);
       return;
@@ -703,6 +711,9 @@ export function MultiAgentAgencyView() {
       return;
     }
     setGeminiApiKey(trimmed);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('argon_gemini_api_key', trimmed);
+    }
     setApiKeyError(null);
     setApiModalOpen(false);
   };
