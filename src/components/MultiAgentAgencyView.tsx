@@ -7,6 +7,7 @@ import {
   Code2,
   Copy,
   Cpu,
+  Gamepad2,
   GitBranch,
   GitCommit,
   Globe,
@@ -592,6 +593,16 @@ export function MultiAgentAgencyView() {
       };
 
       setMessages((prev) => [...prev, responseMsg]);
+
+      // Auto-switch center tab to ARTIFACTS for games/visual components so the user sees results immediately
+      if (
+        plan.artifact &&
+        (plan.artifact.filename.toLowerCase().includes('game') ||
+          plan.artifact.filename.toLowerCase().includes('hello') ||
+          plan.artifact.filename.toLowerCase().includes('hi'))
+      ) {
+        setCenterTab('ARTIFACTS');
+      }
     } catch (err) {
       const errMsg =
         err instanceof Error ? err.message : 'Mission execution encountered an unexpected state.';
@@ -1555,13 +1566,38 @@ export function MultiAgentAgencyView() {
                             }
                             setCenterTab('ARTIFACTS');
                           }}
-                          className="rounded bg-wire-cyan/20 px-2 py-0.5 font-mono text-[10px] font-semibold text-wire-cyan hover:bg-wire-cyan/30"
+                          className="inline-flex items-center gap-1 rounded bg-wire-cyan/20 px-2.5 py-1 font-mono text-[10px] font-bold text-wire-cyan hover:bg-wire-cyan/30"
                         >
-                          {t.controls.openSandbox}
+                          <Play className="size-2.5" aria-hidden="true" />
+                          <span>{t.controls.openSandbox}</span>
                         </button>
                       </div>
                     </div>
-                    <pre className="mt-2 max-h-40 overflow-x-auto rounded bg-terminal-bg p-2 font-mono text-[10px] leading-relaxed text-fg/90">
+
+                    {/* Prominent Play Game Banner */}
+                    {(msg.artifact.filename.toLowerCase().includes('game') ||
+                      msg.artifact.filename.toLowerCase().includes('hello') ||
+                      msg.artifact.filename.toLowerCase().includes('hi')) && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (msg.decomposedWires && msg.decomposedWires[0]) {
+                            setSelectedWireId(msg.decomposedWires[0]);
+                          }
+                          setCenterTab('ARTIFACTS');
+                        }}
+                        className="mt-2.5 flex w-full items-center justify-center gap-2 rounded border border-wire-green/40 bg-wire-green/15 py-2 font-mono text-xs font-bold text-wire-green hover:bg-wire-green/25 active:scale-98 transition-all"
+                      >
+                        <Gamepad2 className="size-4" aria-hidden="true" />
+                        <span>
+                          {locale === 'id'
+                            ? '▶ Buka Layar Penuh & Mainkan Game Sekarang'
+                            : '▶ Open Fullscreen & Play Game Now'}
+                        </span>
+                      </button>
+                    )}
+
+                    <pre className="mt-2 max-h-36 overflow-x-auto rounded bg-terminal-bg p-2 font-mono text-[10px] leading-relaxed text-fg/90">
                       <code>{msg.artifact.code}</code>
                     </pre>
                   </div>
