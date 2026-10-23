@@ -820,7 +820,7 @@ export async function executeGeminiArgonMission(params: {
     };
   }
 
-  const artifact: CodeArtifact = buildDomainArtifact(domain, cleanPrompt, wireIdArch);
+  let artifact: CodeArtifact = buildDomainArtifact(domain, cleanPrompt, wireIdArch);
 
   const newWires: TaskWire[] = [
     {
@@ -1018,14 +1018,29 @@ export async function executeGeminiArgonMission(params: {
 
   if (params.apiKey && validateGeminiApiKey(params.apiKey)) {
     try {
-      const liveText = await callLiveGeminiEndpoint(
-        params.apiKey.trim(),
-        cleanPrompt,
-        params.mode,
-        params.locale
-      );
+      const [liveText, liveArtifact] = await Promise.all([
+        callLiveGeminiEndpoint(
+          params.apiKey.trim(),
+          cleanPrompt,
+          params.mode,
+          params.locale
+        ),
+        callLiveGeminiArtifact(
+          params.apiKey.trim(),
+          cleanPrompt,
+          wireIdArch,
+          params.locale
+        ),
+      ]);
+
       if (liveText) {
         orchestratorSummary = liveText;
+        usedLiveApi = true;
+      }
+      if (liveArtifact) {
+        artifact = liveArtifact;
+        newWires[0].artifact = liveArtifact;
+        newWires[1].artifact = liveArtifact;
         usedLiveApi = true;
       }
     } catch {
@@ -1052,56 +1067,158 @@ export async function executeGeminiArgonMission(params: {
   };
 }
 
+const CANDIDATE_GEMINI_MODELS = [
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-1.5-pro',
+  'gemini-2.5-pro',
+];
+
 async function callLiveGeminiEndpoint(
   apiKey: string,
   prompt: string,
   mode: OrchestrationMode,
   locale: LocaleCode
 ): Promise<string | null> {
-  const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), 12000);
-
   const systemInstruction =
     locale === 'id'
       ? `Anda adalah Gemini 4 Argon (High), Direktur Orkestrasi Multi-Agen tingkat enterprise (setara OpenAI Dots DAG & Grok Heavy Multi-Agent Council). Jawab dalam Bahasa Indonesia secara teknis, padat, tanpa basa-basi, dan tanpa emoji. Rangkum pembagian tugas untuk: (1) Staff Architect, (2) Principal Frontend/Data Engineer, (3) Zero-Trust CSO, dan (4) Red-Team QA dalam mode ${mode}.`
       : `You are Gemini 4 Argon (High), Chief Enterprise Multi-Agent Orchestrator (combining OpenAI Dots DAG scheduling and Grok Heavy Multi-Agent Council debate). Respond concisely in English with high technical precision and zero emojis. Summarize the task delegation across: (1) Staff Architect, (2) Principal Frontend/Data Engineer, (3) Zero-Trust CSO, and (4) Red-Team QA in ${mode} mode.`;
 
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${encodeURIComponent(
-        apiKey
-      )}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controller.signal,
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: systemInstruction }],
-          },
-          contents: [
-            {
-              role: 'user',
-              parts: [{ text: prompt }],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.35,
-            maxOutputTokens: 700,
-          },
-        }),
-      }
-    );
+  for (const model of CANDIDATE_GEMINI_MODELS) {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 9000);
 
-    if (!response.ok) return null;
-    const data = (await response.json()) as {
-      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-    };
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    return text || null;
-  } finally {
-    window.clearTimeout(timeoutId);
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
+          apiKey
+        )}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            systemInstruction: {
+              parts: [{ text: systemInstruction }],
+            },
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: prompt }],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.35,
+              maxOutputTokens: 700,
+            },
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = (await response.json()) as {
+          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        };
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (text) {
+          return text;
+        }
+      }
+    } catch {
+      // Fallback to next candidate model
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
   }
+
+  return null;
+}
+
+async function callLiveGeminiArtifact(
+  apiKey: string,
+  prompt: string,
+  wireId: string,
+  locale: LocaleCode
+): Promise<CodeArtifact | null> {
+  const sanitizedWords = prompt
+    .replace(/[^a-zA-Z0-9\s]/g, '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  const pascalName =
+    sanitizedWords
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join('') || 'DynamicComponent';
+
+  const systemInstruction = `You are a Principal Software Engineer at a world-class technology firm.
+Generate complete, production-ready, clean TypeScript or React code for the executive directive: "${prompt}".
+Rules:
+- Output ONLY valid code within a single markdown code block: \`\`\`typescript ... \`\`\` or \`\`\`tsx ... \`\`\`.
+- Zero explanation or narrative outside the code block.
+- Zero placeholder or dummy text (no TODO, no FIXME, no lorem ipsum, no coming soon).
+- Zero emojis in comments or code.
+- Provide real functions, real state management, complete typed interfaces, and clean UI/logic.`;
+
+  for (const model of CANDIDATE_GEMINI_MODELS) {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(
+          apiKey
+        )}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemInstruction }] },
+            contents: [
+              {
+                role: 'user',
+                parts: [
+                  {
+                    text: `Directive: ${prompt}\nImplement complete production module file named ${wireId.toLowerCase()}${pascalName}.tsx.`,
+                  },
+                ],
+              },
+            ],
+            generationConfig: { temperature: 0.25, maxOutputTokens: 2500 },
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = (await response.json()) as {
+          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        };
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (text) {
+          const match = text.match(/```(?:typescript|tsx|ts)?\s*([\s\S]*?)\s*```/);
+          const rawCode = match ? match[1].trim() : text;
+          const cleanCode = `// Wire ${wireId} — Synthesized by Live Gemini API (${model})\n// Directive: ${prompt.replace(/[*\/]/g, '').slice(0, 72)}\n${rawCode}`;
+
+          return {
+            filename: `src/components/sandbox/${wireId.toLowerCase()}${pascalName}.tsx`,
+            language: 'typescript',
+            summary:
+              locale === 'id'
+                ? `Artefak kode disintesis langsung dari API Gemini model ${model} untuk direktif "${prompt}".`
+                : `Code artifact synthesized live from Gemini API model ${model} for directive "${prompt}".`,
+            code: cleanCode,
+          };
+        }
+      }
+    } catch {
+      // Fallback to next candidate model
+    } finally {
+      window.clearTimeout(timeoutId);
+    }
+  }
+
+  return null;
 }
 
 function buildDomainArtifact(
@@ -1515,51 +1632,81 @@ export class PartitionedStreamCoordinator<T> {
     };
   }
 
+  const cleanTokens = prompt
+    .replace(/[^a-zA-Z0-9\s]/g, '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  const pascalName =
+    cleanTokens
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join('') || 'AutonomousTaskModule';
+  const humanTitle = cleanTokens
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ') || 'Autonomous Task Module';
+
   return {
-    filename: `src/orchestrator/${wireId.toLowerCase()}AgencyDagRunner.ts`,
+    filename: `src/modules/${wireId.toLowerCase()}${pascalName}.ts`,
     language: 'typescript',
-    summary: `Multi-Agent DAG Task Coordinator & Consensus Synthesizer generated for wire ${wireId}.`,
+    summary: `Autonomous production module for "${safeComment}" with isolated state handling, typed runtime boundaries, and multi-agent consensus telemetry.`,
     code: `// Wire ${wireId} — Directive: ${safeComment}
-export interface DagTaskNode {
-  wireId: string;
-  agentCode: string;
-  dependencies: string[];
-  execute: () => Promise<{ ok: boolean; metricsDelta: number; output: string }>;
+// Dynamic Autonomous Module: ${pascalName}
+
+export interface ${pascalName}Config {
+  instanceId: string;
+  wireRef: string;
+  maxRetries: number;
+  telemetryEnabled: boolean;
 }
 
-export async function runAgencyDagWave(
-  nodes: ReadonlyArray<DagTaskNode>
-): Promise<Map<string, { ok: boolean; metricsDelta: number; output: string }>> {
-  const completed = new Map<string, { ok: boolean; metricsDelta: number; output: string }>();
-  const pending = new Map(nodes.map((n) => [n.wireId, n]));
+export interface ${pascalName}State {
+  status: 'INITIALIZED' | 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  processedItems: number;
+  lastExecutionTimestamp: number;
+  checksum: string;
+}
 
-  while (pending.size > 0) {
-    const readyBatch: DagTaskNode[] = [];
-    for (const node of pending.values()) {
-      const depsSatisfied = node.dependencies.every((depId) => completed.get(depId)?.ok === true);
-      if (depsSatisfied) {
-        readyBatch.push(node);
-      }
-    }
+export class ${pascalName}Executor {
+  private config: ${pascalName}Config;
+  private state: ${pascalName}State;
 
-    if (readyBatch.length === 0) {
-      throw new Error('DAG cycle or upstream wire block detected during execution.');
-    }
-
-    const batchResults = await Promise.all(
-      readyBatch.map(async (node) => ({
-        wireId: node.wireId,
-        result: await node.execute(),
-      }))
-    );
-
-    for (const item of batchResults) {
-      completed.set(item.wireId, item.result);
-      pending.delete(item.wireId);
-    }
+  constructor(config: Partial<${pascalName}Config> = {}) {
+    this.config = {
+      instanceId: config.instanceId ?? 'inst_${wireId.toLowerCase()}',
+      wireRef: config.wireRef ?? '${wireId}',
+      maxRetries: config.maxRetries ?? 3,
+      telemetryEnabled: config.telemetryEnabled ?? true,
+    };
+    this.state = {
+      status: 'INITIALIZED',
+      processedItems: 0,
+      lastExecutionTimestamp: Date.now(),
+      checksum: 'chk_${wireId.toLowerCase()}_' + Math.random().toString(36).slice(2, 8),
+    };
   }
 
-  return completed;
-}`,
+  public async executeDirective(payload: Record<string, unknown> = {}): Promise<{
+    success: boolean;
+    operation: string;
+    metrics: ${pascalName}State;
+  }> {
+    this.state.status = 'PROCESSING';
+    const keysCount = Object.keys(payload).length;
+    this.state.processedItems += Math.max(1, keysCount);
+    this.state.lastExecutionTimestamp = Date.now();
+    this.state.status = 'COMPLETED';
+
+    return {
+      success: true,
+      operation: '${humanTitle}',
+      metrics: { ...this.state },
+    };
+  }
+
+  public getTelemetry(): ${pascalName}State {
+    return { ...this.state };
+  }
+}
+`,
   };
 }
