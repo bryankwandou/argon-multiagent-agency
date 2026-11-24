@@ -1,0 +1,31 @@
+{
+  "name": "argon-multiagent-agency",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Argon Multi-Agent Agency — Gemini 4 Argon High Command Floor with OpenAI Dots DAG Orchestration, Grok Multi-Agent Council, Neon Hydrogen Integration, and 3D Spatial Canvas",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node test/verify_system.mjs",
+    "seed:neon": "node init_neon.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^0.469.0",
+    "pg": "^8.13.1",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^4.0.0",
+    "vite": "^6.0.7"
+  }
+}

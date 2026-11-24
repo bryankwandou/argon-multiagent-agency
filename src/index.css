@@ -1,0 +1,177 @@
+@import "tailwindcss";
+
+:root,
+[data-theme="light"] {
+  --color-primary: #e04819;
+  --color-primary-variant: #b8350d;
+  --color-secondary: #0284c7;
+  --color-background: #f5f2eb;
+  --color-surface: #ebe6dc;
+  --color-surface-warm: #e5ddd0;
+  --color-on-primary: #faf8f5;
+  --color-on-surface: #141417;
+  --color-error: #c92a2a;
+  --color-on-error: #faf8f5;
+  --color-outline: rgba(20, 20, 23, 0.14);
+  --color-outline-strong: rgba(20, 20, 23, 0.28);
+  --color-bg: var(--color-background);
+  --color-bg-elevated: var(--color-surface);
+  --color-bg-warm: var(--color-surface-warm);
+  --color-fg: var(--color-on-surface);
+  --color-muted: #57534e;
+  --color-faint: #78716c;
+  --color-line: var(--color-outline);
+  --color-line-strong: var(--color-outline-strong);
+  --color-accent: var(--color-primary);
+  --color-wire-cyan: #0284c7;
+  --color-wire-green: #16a34a;
+  --color-wire-amber: #d97706;
+  --color-wire-red: #dc2626;
+  --color-wire-purple: #7c3aed;
+  --color-floor-canvas: #dcd6cb;
+  --color-terminal-bg: #ebe6dc;
+  --color-terminal-card: #f5f2eb;
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Syne", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+[data-theme="dark"] {
+  --color-primary: #ff5c2a;
+  --color-primary-variant: #ff784d;
+  --color-secondary: #38bdf8;
+  --color-background: #0b0d12;
+  --color-surface: #12161f;
+  --color-surface-warm: #161922;
+  --color-on-primary: #0b0d12;
+  --color-on-surface: #f1f5f9;
+  --color-error: #ef4444;
+  --color-on-error: #0b0d12;
+  --color-outline: rgba(241, 245, 249, 0.11);
+  --color-outline-strong: rgba(241, 245, 249, 0.24);
+  --color-bg: var(--color-background);
+  --color-bg-elevated: var(--color-surface);
+  --color-bg-warm: var(--color-surface-warm);
+  --color-fg: var(--color-on-surface);
+  --color-muted: #94a3b8;
+  --color-faint: #64748b;
+  --color-line: var(--color-outline);
+  --color-line-strong: var(--color-outline-strong);
+  --color-accent: var(--color-primary);
+  --color-wire-cyan: #38bdf8;
+  --color-wire-green: #4ade80;
+  --color-wire-amber: #fbbf24;
+  --color-wire-red: #f87171;
+  --color-wire-purple: #a78bfa;
+  --color-floor-canvas: #0d1016;
+  --color-terminal-bg: #0b0d12;
+  --color-terminal-card: #12161f;
+}
+
+@theme {
+  --color-bg: var(--color-bg);
+  --color-bg-elevated: var(--color-bg-elevated);
+  --color-bg-warm: var(--color-bg-warm);
+  --color-fg: var(--color-fg);
+  --color-muted: var(--color-muted);
+  --color-faint: var(--color-faint);
+  --color-line: var(--color-line);
+  --color-line-strong: var(--color-line-strong);
+  --color-accent: var(--color-accent);
+  --color-error: var(--color-error);
+  --color-wire-cyan: var(--color-wire-cyan);
+  --color-wire-green: var(--color-wire-green);
+  --color-wire-amber: var(--color-wire-amber);
+  --color-wire-red: var(--color-wire-red);
+  --color-wire-purple: var(--color-wire-purple);
+  --color-floor-canvas: var(--color-floor-canvas);
+  --color-terminal-bg: var(--color-terminal-bg);
+  --color-terminal-card: var(--color-terminal-card);
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-bg);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-line-strong);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-muted);
+}
+
+@keyframes argonFadeSlideUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes argonPulseSoft {
+  0%, 100% {
+    opacity: 0.65;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.06);
+  }
+}
+
+@keyframes argonScanline {
+  0% {
+    transform: translate3d(0, -100%, 0);
+  }
+  100% {
+    transform: translate3d(0, 220%, 0);
+  }
+}
+
+.animate-argon-enter {
+  animation: argonFadeSlideUp 220ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-argon-pulse {
+  animation: argonPulseSoft 2.4s ease-in-out infinite;
+}
+
+.argon-scanline::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  height: 35%;
+  background: linear-gradient(180deg, transparent, rgba(56, 189, 248, 0.06), transparent);
+  pointer-events: none;
+  animation: argonScanline 5.5s linear infinite;
+}
+
