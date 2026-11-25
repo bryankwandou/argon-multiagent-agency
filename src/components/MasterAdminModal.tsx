@@ -1,11 +1,30 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Check, RefreshCw, ShieldAlert, ShieldCheck, X } from 'lucide-react';
-import { audioEngine } from '../lib/audioEngine';
 
-export default function MasterAdminModal({ token, onClose, onPendingChange }) {
-  const [users, setUsers] = useState([]);
+interface NeonUserRecord {
+  id: number;
+  username: string;
+  email: string | null;
+  role: string;
+  status: string;
+  created_at: string;
+  approved_by: string | null;
+}
+
+interface MasterAdminModalProps {
+  token: string;
+  onClose: () => void;
+  onPendingChange?: (count: number) => void;
+}
+
+export function MasterAdminModal({
+  token,
+  onClose,
+  onPendingChange,
+}: MasterAdminModalProps) {
+  const [users, setUsers] = useState<NeonUserRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [busyId, setBusyId] = useState(null);
+  const [busyId, setBusyId] = useState<number | null>(null);
   const [error, setError] = useState('');
   const [feedback, setFeedback] = useState('');
 
@@ -14,7 +33,7 @@ export default function MasterAdminModal({ token, onClose, onPendingChange }) {
     setError('');
     try {
       const res = await fetch('/api/auth/users', {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
       if (!res.ok) {
@@ -34,26 +53,24 @@ export default function MasterAdminModal({ token, onClose, onPendingChange }) {
     loadUsers();
   }, [loadUsers]);
 
-  const handleAction = async (userId, action) => {
+  const handleAction = async (userId: number, action: 'APPROVE' | 'REJECT') => {
     setBusyId(userId);
     setError('');
     setFeedback('');
-    audioEngine.play('tick');
     try {
       const res = await fetch('/api/auth/approve', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ userId, action })
+        body: JSON.stringify({ userId, action }),
       });
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || 'Gagal memperbarui status akun.');
         return;
       }
-      audioEngine.play(action === 'APPROVE' ? 'chimeB' : 'blip');
       setFeedback(data.message);
       await loadUsers();
     } catch {
@@ -64,7 +81,14 @@ export default function MasterAdminModal({ token, onClose, onPendingChange }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+    <div
+      role="dialog"
+      aria-modal="true"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-bg/80 p-4 backdrop-blur-sm"
+    >
       <div className="flex max-h-[85vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl border border-line-strong bg-terminal-card shadow-2xl">
         <div className="flex items-center justify-between border-b border-line px-5 py-4">
           <div className="flex items-center gap-2.5">
@@ -91,7 +115,7 @@ export default function MasterAdminModal({ token, onClose, onPendingChange }) {
             <button
               type="button"
               onClick={onClose}
-              aria-label="Tutup panel"
+              aria-label="Close"
               className="inline-flex min-h-9 min-w-9 items-center justify-center rounded border border-line-strong bg-terminal-bg text-muted hover:text-fg"
             >
               <X className="size-4" />
@@ -101,7 +125,7 @@ export default function MasterAdminModal({ token, onClose, onPendingChange }) {
 
         <div className="flex-1 overflow-y-auto p-5">
           {error && (
-            <div className="mb-4 flex items-center gap-2 rounded-lg border border-error/50 bg-error/10 px-3.5 py-2.5 font-mono text-xs text-wire-red">
+            <div className="mb-4 flex items-center gap-2 rounded-lg border border-wire-red/60 bg-wire-red/10 px-3.5 py-2.5 font-mono text-xs text-wire-red">
               <ShieldAlert className="size-4 shrink-0" aria-hidden="true" />
               <span>{error}</span>
             </div>
@@ -114,12 +138,12 @@ export default function MasterAdminModal({ token, onClose, onPendingChange }) {
           )}
 
           {loading ? (
-            <div className="py-12 text-center font-mono text-xs text-muted">
+            <div className="py-10 text-center font-mono text-xs text-muted">
               Membaca tabel argon_users dari Neon PostgreSQL...
             </div>
           ) : (
             <div className="space-y-2.5">
-              {users.map(u => (
+              {users.map((u) => (
                 <div
                   key={u.id}
                   className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-line bg-terminal-bg p-3.5"
@@ -142,7 +166,7 @@ export default function MasterAdminModal({ token, onClose, onPendingChange }) {
                       </span>
                     </div>
                     <p className="mt-1 font-mono text-[11px] text-muted">
-                      {u.email || 'Tanpa email'} · Dibuat: {new Date(u.created_at).toLocaleString('id-ID')}
+                      {u.email || 'Tanpa email'} · {new Date(u.created_at).toLocaleString('id-ID')}
                       {u.approved_by ? ` · Oleh: ${u.approved_by}` : ''}
                     </p>
                   </div>
