@@ -103,6 +103,8 @@ export default function CommandFloorApp({ token, user, onLogout }) {
   const [showMcpModal, setShowMcpModal] = useState(false);
   const [showAdminModal, setShowAdminModal] = useState(false);
   const [pendingUsersCount, setPendingUsersCount] = useState(0);
+  const [aiProvider, setAiProvider] = useState('ANTIGRAVITY_MCP');
+  const [aiModel, setAiModel] = useState('neon-hydrogen-xhigh');
   const [geminiApiKey, setGeminiApiKey] = useState('');
   const [apiTestStatus, setApiTestStatus] = useState('');
   const [mcpInfo, setMcpInfo] = useState(null);
@@ -340,6 +342,8 @@ export default function CommandFloorApp({ token, user, onLogout }) {
           priority,
           wireCounter,
           useNeonHydrogen,
+          provider: aiProvider,
+          model: aiModel,
           apiKey: geminiApiKey
         })
       });
@@ -400,6 +404,10 @@ export default function CommandFloorApp({ token, user, onLogout }) {
           wires: data.newWires?.map(w => w.id) || [],
           traces: data.traces || [],
           councilVotes: data.councilVotes || [],
+          dagSchedule: data.dagSchedule || null,
+          auditReport: data.auditReport || null,
+          councilQuorum: data.councilQuorum || null,
+          providerUsed: data.providerUsed || 'ANTIGRAVITY_MCP',
           artifact: data.artifact,
           executionId: data.executionId,
           elapsedMs: data.elapsedMs
@@ -578,7 +586,7 @@ export default function CommandFloorApp({ token, user, onLogout }) {
           >
             <Key className="size-3.5 text-wire-amber" aria-hidden="true" />
             <span className="hidden sm:inline">
-              {geminiApiKey ? t.controls.apiLive : t.controls.aiCore}
+              {aiProvider === 'ANTIGRAVITY_MCP' ? t.controls.aiCore : `${aiProvider}: LIVE`}
             </span>
           </button>
 
@@ -1156,6 +1164,24 @@ export default function CommandFloorApp({ token, user, onLogout }) {
                     {msg.text}
                   </p>
 
+                  {msg.auditReport && (
+                    <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px]">
+                      <span className={`rounded border px-1.5 py-0.5 font-bold ${msg.auditReport.passed ? 'border-wire-green/50 bg-wire-green/10 text-wire-green' : 'border-wire-red/50 bg-wire-red/10 text-wire-red'}`}>
+                        ZERO-TRUST {msg.auditReport.securityScore}/100
+                      </span>
+                      {msg.dagSchedule && (
+                        <span className="rounded border border-wire-cyan/40 bg-wire-cyan/10 px-1.5 py-0.5 font-bold text-wire-cyan">
+                          KAHN DAG: {msg.dagSchedule.criticalPathDepth} WAVES ({msg.dagSchedule.acyclic ? 'ACYCLIC' : 'CYCLE'})
+                        </span>
+                      )}
+                      {msg.councilQuorum && (
+                        <span className="rounded border border-wire-purple/40 bg-wire-purple/10 px-1.5 py-0.5 font-bold text-wire-purple">
+                          QUORUM {msg.councilQuorum.clearVotes}/{msg.councilQuorum.totalVoters}
+                        </span>
+                      )}
+                    </div>
+                  )}
+
                   {msg.wires?.length > 0 && (
                     <div className="mt-2 flex flex-wrap gap-1">
                       {msg.wires.map(wId => (
@@ -1306,18 +1332,67 @@ export default function CommandFloorApp({ token, user, onLogout }) {
 
             <p className="mt-3 text-xs leading-relaxed text-muted">{t.engineModal.description}</p>
 
-            <div className="mt-4">
-              <label htmlFor="gemini-key" className="block font-mono text-[10.5px] font-bold uppercase text-muted">
-                {t.engineModal.keyLabel}
-              </label>
-              <input
-                id="gemini-key"
-                type="password"
-                value={geminiApiKey}
-                onChange={e => setGeminiApiKey(e.target.value)}
-                placeholder="AIzaSy... (opsional — kosongkan untuk Pro Plan Credit Bridge)"
-                className="mt-1.5 min-h-10 w-full rounded-lg border border-line-strong bg-terminal-bg px-3 font-mono text-xs text-fg outline-none focus:border-wire-cyan"
-              />
+            <div className="mt-4 space-y-3">
+              <div>
+                <label htmlFor="ai-provider" className="block font-mono text-[10.5px] font-bold uppercase text-muted">
+                  MULTI-AI PROVIDER ADAPTER (SEAMLESS SWITCH)
+                </label>
+                <select
+                  id="ai-provider"
+                  value={aiProvider}
+                  onChange={e => {
+                    const next = e.target.value;
+                    setAiProvider(next);
+                    const defaults = {
+                      ANTIGRAVITY_MCP: 'neon-hydrogen-xhigh',
+                      GEMINI: 'gemini-2.0-flash',
+                      OPENAI: 'gpt-4o-mini',
+                      ANTHROPIC: 'claude-3-5-sonnet-latest',
+                      XAI_GROK: 'grok-2-latest',
+                      OPENROUTER: 'deepseek/deepseek-chat'
+                    };
+                    setAiModel(defaults[next] || 'neon-hydrogen-xhigh');
+                    setApiTestStatus('');
+                  }}
+                  className="mt-1.5 min-h-10 w-full rounded-lg border border-line-strong bg-terminal-bg px-3 font-mono text-xs text-fg outline-none focus:border-wire-cyan"
+                >
+                  <option value="ANTIGRAVITY_MCP">Antigravity MCP Pro Credit Bridge (Default · Tanpa API Key)</option>
+                  <option value="GEMINI">Google Gemini Direct API</option>
+                  <option value="OPENAI">OpenAI Chat Completions (GPT-4o / o3)</option>
+                  <option value="ANTHROPIC">Anthropic Claude Messages API</option>
+                  <option value="XAI_GROK">xAI Grok API</option>
+                  <option value="OPENROUTER">OpenRouter Multi-AI (DeepSeek / Llama / Qwen)</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="ai-model" className="block font-mono text-[10.5px] font-bold uppercase text-muted">
+                  TARGET MODEL ID
+                </label>
+                <input
+                  id="ai-model"
+                  type="text"
+                  value={aiModel}
+                  onChange={e => setAiModel(e.target.value)}
+                  className="mt-1.5 min-h-10 w-full rounded-lg border border-line-strong bg-terminal-bg px-3 font-mono text-xs text-fg outline-none focus:border-wire-cyan"
+                />
+              </div>
+
+              {aiProvider !== 'ANTIGRAVITY_MCP' && (
+                <div>
+                  <label htmlFor="gemini-key" className="block font-mono text-[10.5px] font-bold uppercase text-muted">
+                    SESSION API KEY ({aiProvider} · RAM ONLY)
+                  </label>
+                  <input
+                    id="gemini-key"
+                    type="password"
+                    value={geminiApiKey}
+                    onChange={e => setGeminiApiKey(e.target.value)}
+                    placeholder={`Masukkan API key ${aiProvider} (fallback otomatis ke Antigravity jika kosong)`}
+                    className="mt-1.5 min-h-10 w-full rounded-lg border border-line-strong bg-terminal-bg px-3 font-mono text-xs text-fg outline-none focus:border-wire-cyan"
+                  />
+                </div>
+              )}
             </div>
 
             {apiTestStatus && (
@@ -1397,7 +1472,7 @@ export default function CommandFloorApp({ token, user, onLogout }) {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2">
-              {['PING_MCP', 'SYNC_NEON_HYDROGEN', 'RUN_DAG_WAVE', 'COUNCIL_CONSENSUS'].map(cmd => (
+              {['PING_MCP', 'SYNC_NEON_HYDROGEN', 'VERIFY_PROVIDERS', 'RUN_DEEP_AUDIT', 'RUN_DAG_WAVE', 'COUNCIL_CONSENSUS'].map(cmd => (
                 <button
                   key={cmd}
                   type="button"

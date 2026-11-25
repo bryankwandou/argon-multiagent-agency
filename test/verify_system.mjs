@@ -125,7 +125,7 @@ async function runTests() {
   assert.equal(mcpRpc.data.neonDatabase.connected, true);
   console.log(`[PASS] 8. Antigravity MCP Bridge live JSON-RPC ACK (Neon latency ${mcpRpc.data.neonDatabase.latencyMs}ms)`);
 
-  // 9. Live Real-Time Multi-Agent Orchestration (Neon Hydrogen xHigh + Grok Council + DAG Wires)
+  // 9. Live Real-Time Multi-Agent Orchestration (Neon Hydrogen xHigh + Kahn DAG + Grok Quorum)
   const orch = await callJson('/api/agent/orchestrate', {
     method: 'POST',
     headers: { Authorization: `Bearer ${masterToken}` },
@@ -134,22 +134,78 @@ async function runTests() {
       mode: 'GROK_COUNCIL',
       targetAgent: 'ALL',
       priority: 'P0',
+      provider: 'ANTIGRAVITY_MCP',
       useNeonHydrogen: true
     })
   });
   assert.equal(orch.status, 200, 'Live orchestration must succeed');
   assert.equal(orch.data.newWires.length, 3, 'Must generate 3 chained AG-2xx DAG wires');
+  assert.equal(orch.data.dagSchedule.acyclic, true, 'Kahn DAG scheduler must verify acyclicity');
+  assert.equal(orch.data.dagSchedule.criticalPathDepth, 3, '3-stage wire chain must produce 3 execution waves');
+  assert.equal(orch.data.auditReport.passed, true, 'Clean artifact must pass static security audit');
+  assert.equal(orch.data.councilQuorum.passed, true, 'Byzantine quorum must pass for clean build');
   assert.equal(orch.data.councilVotes.length, 4, 'Must produce 4 Grok Council consensus votes');
   assert.ok(orch.data.artifact.filename.includes('RetroArcadeGame'), 'Must compile domain-aware artifact');
   assert.ok(orch.data.executionId > 0, 'Must persist execution log into Neon PostgreSQL');
-  console.log(`[PASS] 9. Live Orchestration verified (Execution #${orch.data.executionId}, ${orch.data.totalTokens} tokens, ${orch.data.elapsedMs}ms)`);
+  console.log(`[PASS] 9. Live Orchestration + Kahn DAG + Council Quorum verified (Exec #${orch.data.executionId}, ${orch.data.auditReport.securityScore}/100)`);
 
-  // 10. Verify Desktop .EXE metadata endpoint & checksum
+  // 10. Real Static Security Checker Attack Detection (must catch eval + SQLi + block SEC-05)
+  const attackProbe = await callJson('/api/agent/orchestrate', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${masterToken}` },
+    body: JSON.stringify({
+      prompt: 'Audit unsafe legacy snippet',
+      mode: 'GROK_COUNCIL',
+      codeToAudit: 'function bad(x){ eval(x); const q = `SELECT * FROM users WHERE id=${x}`; }'
+    })
+  });
+  assert.equal(attackProbe.status, 200);
+  assert.equal(attackProbe.data.auditReport.passed, false, 'Static security checker MUST fail on eval + SQLi');
+  assert.ok(attackProbe.data.auditReport.securityScore < 60, 'Security score MUST drop below 60 on critical findings');
+  assert.equal(attackProbe.data.councilVotes.find(v => v.agentId === 'SEC-05')?.vote, 'BLOCK', 'SEC-05 MUST vote BLOCK on OWASP violation');
+  console.log(`[PASS] 10. Real OWASP Static Checker blocked eval/SQLi payload (Score ${attackProbe.data.auditReport.securityScore}/100)`);
+
+  // 11. Deep Self-Audit & Multi-AI Provider Verification via MCP Bridge
+  const deepAudit = await callJson('/api/agent/mcp-bridge', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${masterToken}` },
+    body: JSON.stringify({ command: 'RUN_DEEP_AUDIT' })
+  });
+  assert.equal(deepAudit.status, 200);
+  assert.equal(deepAudit.data.rpcResponse.diagnostics.securityScannerSelfTest, true);
+  assert.equal(deepAudit.data.rpcResponse.diagnostics.kahnAcyclicSelfTest, true);
+  assert.equal(deepAudit.data.rpcResponse.diagnostics.kahnCycleRejectionSelfTest, true);
+
+  const provCheck = await callJson('/api/agent/mcp-bridge', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${masterToken}` },
+    body: JSON.stringify({ command: 'VERIFY_PROVIDERS' })
+  });
+  assert.equal(provCheck.status, 200);
+  assert.ok(provCheck.data.rpcResponse.diagnostics.externalAdapters.length >= 6, 'Must expose 6 unified AI adapters');
+  console.log('[PASS] 11. MCP RUN_DEEP_AUDIT (Kahn Cycle + OWASP Self-Test) & 6-Provider VERIFY_PROVIDERS verified');
+
+  // 12. Graceful Multi-AI Fallback test (external provider with missing key falls back smoothly to Antigravity MCP)
+  const fallbackRun = await callJson('/api/agent/orchestrate', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${masterToken}` },
+    body: JSON.stringify({
+      prompt: 'Verify seamless OpenAI -> Antigravity MCP fallback',
+      provider: 'OPENAI',
+      apiKey: ''
+    })
+  });
+  assert.equal(fallbackRun.status, 200);
+  assert.equal(fallbackRun.data.providerUsed, 'ANTIGRAVITY_MCP');
+  assert.ok(fallbackRun.data.fallbackReason, 'Fallback reason must be reported transparently');
+  console.log('[PASS] 12. Seamless Multi-AI fallback (OPENAI -> ANTIGRAVITY_MCP Pro Bridge) verified');
+
+  // 13. Verify Desktop .EXE metadata endpoint & checksum
   const dlMeta = await callJson('/api/download/setup?meta=1');
   assert.equal(dlMeta.status, 200);
   assert.equal(dlMeta.data.sha256, '6C6B69CBB1E6234CD2A4A0F7FD53E2EF9E278255B8E951A0159841B1004C97CE');
   assert.equal(dlMeta.data.sizeBytes, 116955184);
-  console.log('[PASS] 10. Desktop .EXE installer metadata & SHA-256 verified');
+  console.log('[PASS] 13. Desktop .EXE installer metadata & SHA-256 verified');
 
   // Cleanup temporary test user from Neon DB
   if (process.env.DATABASE_URL) {
@@ -158,7 +214,7 @@ async function runTests() {
     console.log(`[CLEANUP] Removed temporary test account ${tempUsername} from Neon DB`);
   }
 
-  console.log('\nALL 10 END-TO-END LIVE NEON + MCP + SECURITY TESTS PASSED!');
+  console.log('\nALL 13 END-TO-END LIVE NEON + MCP + KAHN DAG + OWASP + MULTI-AI TESTS PASSED!');
 }
 
 async function startLocalServerIfNeeded() {
