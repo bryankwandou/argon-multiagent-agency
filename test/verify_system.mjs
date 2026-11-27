@@ -207,6 +207,90 @@ async function runTests() {
   assert.equal(dlMeta.data.sizeBytes, 116955184);
   console.log('[PASS] 13. Desktop .EXE installer metadata & SHA-256 verified');
 
+  // 14. Real MCP 2025-03-26 Streamable HTTP initialize + notifications/initialized
+  const mcpInit = await callJson('/mcp', {
+    method: 'POST',
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: { protocolVersion: '2025-03-26', capabilities: {}, clientInfo: { name: 'verify-suite', version: '1.0' } }
+    })
+  });
+  assert.equal(mcpInit.status, 200);
+  assert.equal(mcpInit.data.result?.protocolVersion, '2025-03-26');
+  assert.equal(mcpInit.data.result?.serverInfo?.name, 'argon-multiagent-agency');
+
+  const mcpNotif = await callJson('/mcp', {
+    method: 'POST',
+    body: JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' })
+  });
+  assert.equal(mcpNotif.status, 202, 'notifications/initialized must return HTTP 202');
+  console.log('[PASS] 14. MCP 2025-03-26 initialize handshake & 202 notification verified on /mcp');
+
+  // 15. Real MCP tools/list discovery
+  const mcpTools = await callJson('/mcp', {
+    method: 'POST',
+    body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} })
+  });
+  assert.equal(mcpTools.status, 200);
+  assert.equal(mcpTools.data.result?.tools?.length, 6, 'MCP server must advertise all 6 typed tools');
+  console.log('[PASS] 15. MCP tools/list advertised all 6 typed tools');
+
+  // 16. Real MCP tools/call (stateless OWASP + Kahn DAG cycle detection)
+  const mcpAudit = await callJson('/mcp', {
+    method: 'POST',
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 3,
+      method: 'tools/call',
+      params: { name: 'argon_static_security_audit', arguments: { code: 'eval(x); const q = `SELECT * FROM t WHERE id=${x}`;' } }
+    })
+  });
+  const parsedAudit = JSON.parse(mcpAudit.data.result.content[0].text);
+  assert.equal(parsedAudit.report.passed, false, 'MCP OWASP audit tool must flag eval + SQLi');
+
+  const mcpDag = await callJson('/mcp', {
+    method: 'POST',
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 4,
+      method: 'tools/call',
+      params: { name: 'argon_validate_dag', arguments: { nodes: [{ id: 'A', dependencies: ['B'] }, { id: 'B', dependencies: ['A'] }] } }
+    })
+  });
+  const parsedDag = JSON.parse(mcpDag.data.result.content[0].text);
+  assert.equal(parsedDag.schedule.acyclic, false, 'MCP Kahn DAG tool must detect cyclic graph');
+  console.log('[PASS] 16. MCP tools/call (argon_static_security_audit + argon_validate_dag) verified');
+
+  // 17. Real MCP tools/call auth enforcement + Neon persistence (argon_orchestrate_mission + argon_admin_list_users)
+  const mcpUnauthAdmin = await callJson('/mcp', {
+    method: 'POST',
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 5,
+      method: 'tools/call',
+      params: { name: 'argon_admin_list_users', arguments: {} }
+    })
+  });
+  assert.equal(mcpUnauthAdmin.data.result?.isError, true, 'Unauthenticated MCP admin call must be rejected');
+
+  const mcpOrch = await callJson('/mcp', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${masterToken}` },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      id: 6,
+      method: 'tools/call',
+      params: { name: 'argon_orchestrate_mission', arguments: { prompt: 'MCP spec integration check', mode: 'AUTO_DAG' } }
+    })
+  });
+  assert.equal(mcpOrch.data.result?.isError, false);
+  const parsedMcpOrch = JSON.parse(mcpOrch.data.result.content[0].text);
+  assert.ok(parsedMcpOrch.executionId > 0, 'MCP orchestrate tool must persist execution log in Neon');
+  assert.equal(parsedMcpOrch.llmUsed, false, 'Deterministic engine must honestly report llmUsed=false');
+  console.log(`[PASS] 17. Authenticated MCP tools/call persisted Exec #${parsedMcpOrch.executionId} to Neon & blocked unauth admin`);
+
   // Cleanup temporary test user from Neon DB
   if (process.env.DATABASE_URL) {
     const sql = neon(process.env.DATABASE_URL);
@@ -214,7 +298,7 @@ async function runTests() {
     console.log(`[CLEANUP] Removed temporary test account ${tempUsername} from Neon DB`);
   }
 
-  console.log('\nALL 13 END-TO-END LIVE NEON + MCP + KAHN DAG + OWASP + MULTI-AI TESTS PASSED!');
+  console.log('\nALL 17 END-TO-END LIVE NEON + REAL MCP 2025-03-26 + KAHN DAG + OWASP + MULTI-AI TESTS PASSED!');
 }
 
 async function startLocalServerIfNeeded() {

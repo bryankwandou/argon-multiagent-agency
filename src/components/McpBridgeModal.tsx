@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Activity, Terminal, X } from 'lucide-react';
+import { Activity, PlugZap, Terminal, X } from 'lucide-react';
 import type { AuthUser } from './AuthModal';
 
 export interface McpBridgeInfo {
   status?: string;
-  billingChannel?: string;
+  protocol?: string;
+  mcpEndpoint?: string;
+  engineMode?: string;
   neonDatabase?: {
     connected?: boolean;
     latencyMs?: number;
@@ -23,9 +25,8 @@ interface McpBridgeModalProps {
   onClose: () => void;
 }
 
-const MCP_COMMANDS = [
+const DIAGNOSTIC_COMMANDS = [
   'PING_MCP',
-  'SYNC_NEON_HYDROGEN',
   'VERIFY_PROVIDERS',
   'RUN_DEEP_AUDIT',
   'RUN_DAG_WAVE',
@@ -44,6 +45,48 @@ export function McpBridgeModal({
     mcpInfo?.rpcResponse || null
   );
   const [busyCmd, setBusyCmd] = useState<string | null>(null);
+
+  const testRealMcpHandshake = async () => {
+    setBusyCmd('MCP_HANDSHAKE');
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const initRes = await fetch('/mcp', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'initialize',
+          params: {
+            protocolVersion: '2025-03-26',
+            capabilities: {},
+            clientInfo: { name: 'argon-web-inspector', version: '2.1.0' },
+          },
+        }),
+      });
+      const initData = await initRes.json();
+
+      const listRes = await fetch('/mcp', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} }),
+      });
+      const listData = await listRes.json();
+
+      setRpcOutput({
+        endpoint: '/mcp',
+        protocolVersion: initData?.result?.protocolVersion,
+        serverInfo: initData?.result?.serverInfo,
+        discoveredTools: (listData?.result?.tools || []).map((t: { name: string }) => t.name),
+      });
+    } catch {
+      setRpcOutput({ error: 'Network error during MCP 2025-03-26 handshake' });
+    } finally {
+      setBusyCmd(null);
+    }
+  };
 
   const sendCommand = async (command: string) => {
     if (!token) {
@@ -69,7 +112,7 @@ export function McpBridgeModal({
         setRpcOutput({ error: data.error || 'RPC rejected' });
       }
     } catch {
-      setRpcOutput({ error: 'Network error reaching MCP bridge' });
+      setRpcOutput({ error: 'Network error reaching diagnostics endpoint' });
     } finally {
       setBusyCmd(null);
     }
@@ -90,11 +133,11 @@ export function McpBridgeModal({
             <Activity className="size-5 text-wire-green" aria-hidden="true" />
             <div>
               <h2 className="font-display text-lg font-bold text-fg">
-                Antigravity MCP Bridge & Neon Telemetry
+                MCP 2025-03-26 Server & Neon Telemetry
               </h2>
               <p className="font-mono text-[11px] text-wire-green">
-                {mcpInfo?.billingChannel ||
-                  'Antigravity Pro Plan Account Credit (Non-API-Key Direct Runtime)'}
+                {mcpInfo?.engineMode ||
+                  'Built-in Deterministic Engine (Kahn DAG + OWASP · External LLM requires session API key)'}
               </p>
             </div>
           </div>
@@ -110,8 +153,10 @@ export function McpBridgeModal({
 
         <div className="mt-4 grid grid-cols-2 gap-2.5 font-mono text-xs">
           <div className="rounded border border-line bg-terminal-bg p-3">
-            <p className="text-[10px] text-muted">MCP BRIDGE</p>
-            <p className="mt-1 font-bold text-fg">{mcpInfo?.status || 'CONNECTED'}</p>
+            <p className="text-[10px] text-muted">MCP STREAMABLE HTTP</p>
+            <p className="mt-1 font-bold text-fg">
+              {mcpInfo?.mcpEndpoint || '/mcp'} · {mcpInfo?.status || 'CONNECTED'}
+            </p>
           </div>
           <div className="rounded border border-line bg-terminal-bg p-3">
             <p className="text-[10px] text-muted">NEON LATENCY</p>
@@ -138,7 +183,17 @@ export function McpBridgeModal({
         </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
-          {MCP_COMMANDS.map((cmd) => (
+          <button
+            type="button"
+            disabled={busyCmd !== null}
+            onClick={testRealMcpHandshake}
+            className="inline-flex items-center gap-1 rounded border border-wire-green bg-wire-green/15 px-2.5 py-1.5 font-mono text-[10.5px] font-bold text-wire-green hover:bg-wire-green/25 disabled:opacity-50"
+          >
+            <PlugZap className="size-3" aria-hidden="true" />
+            <span>{busyCmd === 'MCP_HANDSHAKE' ? '...' : 'TEST MCP INITIALIZE + TOOLS/LIST'}</span>
+          </button>
+
+          {DIAGNOSTIC_COMMANDS.map((cmd) => (
             <button
               key={cmd}
               type="button"
@@ -161,4 +216,3 @@ export function McpBridgeModal({
     </div>
   );
 }
-

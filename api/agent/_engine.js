@@ -94,9 +94,9 @@ export const AGENTS_SPEC = [
 export const AI_PROVIDERS = {
   ANTIGRAVITY_MCP: {
     id: 'ANTIGRAVITY_MCP',
-    label: 'Antigravity MCP Pro Bridge (Default · Non-API-Key)',
+    label: 'Built-in Deterministic Engine (Kahn DAG + OWASP · No LLM API Key)',
     requiresKey: false,
-    defaultModel: 'neon-hydrogen-xhigh'
+    defaultModel: 'deterministic-kahn-owasp-v2'
   },
   GEMINI: {
     id: 'GEMINI',
@@ -351,7 +351,7 @@ export function evaluateCouncilQuorum(dagSchedule, auditReport, rankedAgents, wi
 export async function invokeExternalProvider({ provider = 'ANTIGRAVITY_MCP', apiKey = '', model = '', prompt, engineLabel }) {
   const cleanProvider = AI_PROVIDERS[provider] ? provider : 'ANTIGRAVITY_MCP';
   if (cleanProvider === 'ANTIGRAVITY_MCP') {
-    return { text: null, providerUsed: 'ANTIGRAVITY_MCP', modelUsed: 'neon-hydrogen-xhigh', fallbackReason: null };
+    return { text: null, providerUsed: 'ANTIGRAVITY_MCP', modelUsed: 'deterministic-kahn-owasp-v2', fallbackReason: null };
   }
 
   const trimmedKey = typeof apiKey === 'string' ? apiKey.trim() : '';
@@ -359,8 +359,8 @@ export async function invokeExternalProvider({ provider = 'ANTIGRAVITY_MCP', api
     return {
       text: null,
       providerUsed: 'ANTIGRAVITY_MCP',
-      modelUsed: 'neon-hydrogen-xhigh',
-      fallbackReason: `${cleanProvider} memerlukan kunci API sesi; dialihkan otomatis ke Antigravity Pro Credit Bridge.`
+      modelUsed: 'deterministic-kahn-owasp-v2',
+      fallbackReason: `${cleanProvider} memerlukan kunci API sesi; dialihkan ke Built-in Deterministic Engine (tidak memanggil LLM eksternal).`
     };
   }
 
@@ -441,8 +441,8 @@ export async function invokeExternalProvider({ provider = 'ANTIGRAVITY_MCP', api
     return {
       text: null,
       providerUsed: 'ANTIGRAVITY_MCP',
-      modelUsed: 'neon-hydrogen-xhigh',
-      fallbackReason: `${cleanProvider} tidak merespons (${err.message}); eksekusi dilanjutkan oleh Antigravity MCP Pro Bridge.`
+      modelUsed: 'deterministic-kahn-owasp-v2',
+      fallbackReason: `${cleanProvider} tidak merespons (${err.message}); dialihkan ke Built-in Deterministic Engine.`
     };
   } finally {
     clearTimeout(timeout);

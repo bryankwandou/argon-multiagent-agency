@@ -17,6 +17,8 @@ if (fs.existsSync(envPath)) {
 }
 
 const ROUTES = {
+  '/mcp': () => import('./api/mcp.js'),
+  '/api/mcp': () => import('./api/mcp.js'),
   '/api/auth/login': () => import('./api/auth/login.js'),
   '/api/auth/register': () => import('./api/auth/register.js'),
   '/api/auth/users': () => import('./api/auth/users.js'),

@@ -768,8 +768,8 @@ export function IsometricOfficeCanvas({
           const bobOffset = isMoving
             ? Math.abs(Math.sin(timestamp * 0.012)) * 3.5
             : agent.state === 'TYPING'
-            ? Math.sin(timestamp * 0.018 + agent.id.charCodeAt(5)) * 1.1
-            : 0;
+              ? Math.sin(timestamp * 0.018 + agent.id.charCodeAt(5)) * 1.1
+              : 0;
 
           const baseScreen = isoToScreen(
             coord.x,
@@ -797,10 +797,10 @@ export function IsometricOfficeCanvas({
           ctx.strokeStyle = isSelected
             ? palette.wireBeamAmber
             : isHovered
-            ? palette.wireBeamCyan
-            : agent.state === 'DEBATING'
-            ? palette.wireBeamPurple
-            : palette.wireBeamGreen;
+              ? palette.wireBeamCyan
+              : agent.state === 'DEBATING'
+                ? palette.wireBeamPurple
+                : palette.wireBeamGreen;
           ctx.lineWidth = (isSelected || isHovered ? 2.4 : 1.3) * scale;
           ctx.stroke();
 
@@ -876,8 +876,8 @@ export function IsometricOfficeCanvas({
               wire.status === 'BLOCKED'
                 ? palette.wireBeamAmber
                 : wire.status === 'VERIFIED' || wire.status === 'SHIPPED'
-                ? palette.wireBeamGreen
-                : palette.wireBeamCyan;
+                  ? palette.wireBeamGreen
+                  : palette.wireBeamCyan;
             ctx.lineWidth = 1.4 * scale;
             ctx.setLineDash([5 * scale, 4 * scale]);
             ctx.lineDashOffset = -((timestamp * 0.03) % 24);
@@ -1002,11 +1002,10 @@ export function IsometricOfficeCanvas({
         <button
           type="button"
           onClick={onToggleDagLinks}
-          className={`inline-flex min-h-9 items-center gap-1.5 rounded border px-2.5 py-1 font-mono text-[11px] font-medium transition-colors ${
-            showDagLinks
-              ? 'border-wire-cyan bg-terminal-card text-wire-cyan'
-              : 'border-line bg-terminal-card/85 text-muted hover:text-fg'
-          }`}
+          className={`inline-flex min-h-9 items-center gap-1.5 rounded border px-2.5 py-1 font-mono text-[11px] font-medium transition-colors ${showDagLinks
+            ? 'border-wire-cyan bg-terminal-card text-wire-cyan'
+            : 'border-line bg-terminal-card/85 text-muted hover:text-fg'
+            }`}
         >
           <Network className="size-3.5" aria-hidden="true" />
           <span className="hidden sm:inline">DOTS</span>
@@ -1083,13 +1082,12 @@ export function IsometricOfficeCanvas({
                 onMouseLeave={() =>
                   setHoveredAgentId((prev) => (prev === agent.id ? null : prev))
                 }
-                className={`pointer-events-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] font-medium transition-transform ${
-                  isSelected
-                    ? 'scale-105 border border-wire-amber bg-terminal-card text-wire-amber'
-                    : isHovered
+                className={`pointer-events-auto inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono text-[10px] font-medium transition-transform ${isSelected
+                  ? 'scale-105 border border-wire-amber bg-terminal-card text-wire-amber'
+                  : isHovered
                     ? 'scale-105 border border-wire-cyan bg-terminal-card text-fg'
                     : 'border border-line bg-terminal-card/90 text-fg/90 hover:border-line-strong'
-                }`}
+                  }`}
               >
                 <MessageSquare className="size-2.5 shrink-0 text-wire-cyan" aria-hidden="true" />
                 <span className="whitespace-nowrap">

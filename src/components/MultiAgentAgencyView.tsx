@@ -206,7 +206,7 @@ export function MultiAgentAgencyView() {
   const [apiKeyDraft, setApiKeyDraft] = useState('');
   const [apiKeyError, setApiKeyError] = useState<string | null>(null);
   const [aiProvider, setAiProvider] = useState<string>('ANTIGRAVITY_MCP');
-  const [aiModel, setAiModel] = useState<string>('neon-hydrogen-xhigh');
+  const [aiModel, setAiModel] = useState<string>('deterministic-kahn-owasp-v2');
 
   const [authToken, setAuthToken] = useState<string>(() => sessionStorage.getItem('argon_session_token') || '');
   const [authUser, setAuthUser] = useState<AuthUser | null>(() => {
@@ -237,7 +237,7 @@ export function MultiAgentAgencyView() {
           setAuthUser(null);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     if (authToken && authUser?.role === 'MASTER_ADMIN') {
       fetch('/api/auth/users', { headers: { Authorization: `Bearer ${authToken}` } })
@@ -247,7 +247,7 @@ export function MultiAgentAgencyView() {
             setPendingUsersCount(uData.pendingCount);
           }
         })
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [authToken, authUser]);
 
@@ -403,8 +403,8 @@ export function MultiAgentAgencyView() {
           ? 'Dewan Multi-Agen Grok dipanggil ke Ruang Konferensi untuk debat silang.'
           : 'Grok Multi-Agent Council summoned to Conference Room for cross-critique.'
         : locale === 'id'
-        ? 'Sidang Dewan selesai. Seluruh agen kembali ke meja produksi.'
-        : 'Council session concluded. All floor agents returning to production desks.',
+          ? 'Sidang Dewan selesai. Seluruh agen kembali ke meja produksi.'
+          : 'Council session concluded. All floor agents returning to production desks.',
     };
     setChatter((prev) => [logEntry, ...prev.slice(0, 29)]);
   };
@@ -518,13 +518,13 @@ export function MultiAgentAgencyView() {
 
         const targetCoord = useCouncilWalk
           ? {
-              x:
-                (confSpots[idx % confSpots.length]?.x ?? ag.deskCoord.x) +
-                ((idx % 3) - 1) * 0.22,
-              y:
-                (confSpots[idx % confSpots.length]?.y ?? ag.deskCoord.y) +
-                (Math.floor(idx / 3) - 1) * 0.18,
-            }
+            x:
+              (confSpots[idx % confSpots.length]?.x ?? ag.deskCoord.x) +
+              ((idx % 3) - 1) * 0.22,
+            y:
+              (confSpots[idx % confSpots.length]?.y ?? ag.deskCoord.y) +
+              (Math.floor(idx / 3) - 1) * 0.18,
+          }
           : { ...ag.deskCoord };
 
         return {
@@ -537,8 +537,8 @@ export function MultiAgentAgencyView() {
                 ? `Memecah misi "${clean.slice(0, 28)}..." ke graf DAG.`
                 : `Decomposing "${clean.slice(0, 28)}..." into DAG wires.`
               : locale === 'id'
-              ? `Mengeksekusi sub-tugas (${orchestrationMode})...`
-              : `Executing specialist node (${orchestrationMode})...`,
+                ? `Mengeksekusi sub-tugas (${orchestrationMode})...`
+                : `Executing specialist node (${orchestrationMode})...`,
           speechUpdatedAt: Date.now(),
         };
       })
@@ -636,8 +636,8 @@ export function MultiAgentAgencyView() {
             speechBubble: trace
               ? trace.outputSummary.slice(0, 56)
               : vote
-              ? `${vote.stance}: ${vote.critique.slice(0, 48)}`
-              : ag.speechBubble,
+                ? `${vote.stance}: ${vote.critique.slice(0, 48)}`
+                : ag.speechBubble,
             speechUpdatedAt: Date.now(),
           };
         })
@@ -659,7 +659,7 @@ export function MultiAgentAgencyView() {
       setChatter((prev) => [...traceChatter, ...prev.slice(0, 26)]);
 
       const backendNote = backendAudit
-        ? `\n\n[NEON + MCP AUDIT #${backendAudit.executionId}] Kahn DAG: ${backendAudit.dagSchedule?.criticalPathDepth ?? 3} waves (${backendAudit.dagSchedule?.acyclic ? 'ACYCLIC' : 'CYCLE'}) · Zero-Trust: ${backendAudit.auditReport?.securityScore ?? 100}/100 · Council Quorum: ${backendAudit.councilQuorum?.clearVotes ?? 4}/${backendAudit.councilQuorum?.totalVoters ?? 4} · Provider: ${backendAudit.providerUsed}/${backendAudit.modelUsed}`
+        ? `\n\n[NEON AUDIT #${backendAudit.executionId}] Kahn DAG: ${backendAudit.dagSchedule?.criticalPathDepth ?? 3} waves (${backendAudit.dagSchedule?.acyclic ? 'ACYCLIC' : 'CYCLE'}) · Zero-Trust: ${backendAudit.auditReport?.securityScore ?? 100}/100 · Council Quorum: ${backendAudit.councilQuorum?.clearVotes ?? 4}/${backendAudit.councilQuorum?.totalVoters ?? 4} · Engine: ${backendAudit.llmUsed ? `${backendAudit.providerUsed}/${backendAudit.modelUsed} (LLM)` : 'Built-in Deterministic Engine'}`
         : '';
 
       const responseMsg: AgencyChatMessage = {
@@ -668,16 +668,16 @@ export function MultiAgentAgencyView() {
         agentId: 'ORCH-01',
         agentName: 'Argon Director',
         roleLabel:
-          backendAudit?.providerUsed && backendAudit.providerUsed !== 'ANTIGRAVITY_MCP'
-            ? `Gemini 4 Argon (High) · ${backendAudit.providerUsed} Live`
+          backendAudit?.llmUsed
+            ? `${backendAudit.providerUsed} · Live LLM API`
             : plan.usedLiveApi
-              ? 'Gemini 4 Argon (High) · Live API Stream'
-              : 'Gemini 4 Argon (High) · Antigravity Pro Credit Bridge',
+              ? 'Google Gemini · Live API Stream'
+              : 'Built-in Deterministic Engine (Kahn DAG + OWASP)',
         timestamp: formatCurrentTimeCT(),
         content: `${plan.orchestratorSummary}${backendNote}`,
         mode: orchestrationMode,
         priority,
-        modelBadge: backendAudit?.providerUsed === 'ANTIGRAVITY_MCP' ? 'Neon Hydrogen xHigh' : 'Gemini 4 Argon (High)',
+        modelBadge: backendAudit?.llmUsed ? `${backendAudit.providerUsed} LLM` : 'Deterministic Core',
         decomposedWires: plan.newWires.map((w) => w.id),
         traces: plan.traces,
         councilVotes: plan.councilVotes,
@@ -712,52 +712,52 @@ export function MultiAgentAgencyView() {
   const missionPresets =
     locale === 'id'
       ? [
-          {
-            label: 'Cutover Auth Zero-Trust',
-            prompt:
-              'Rancang dan implementasikan cutover autentikasi Zero-Trust dengan rotasi kunci webhook HMAC-SHA256 otomatis dan audit OWASP.',
-          },
-          {
-            label: 'Pipeline Telemetri Real-Time',
-            prompt:
-              'Bangun pipeline agregator telemetri multi-agen berkecepatan tinggi dengan perlindungan dead-letter queue dan pemantauan P99.',
-          },
-          {
-            label: 'Arsitektur UI Spasial 120fps',
-            prompt:
-              'Buat sistem orkestrasi DAG frontend interaktif dengan token tema adaptif gelap/terang dan verifikasi aksesibilitas WCAG AA+.',
-          },
-          {
-            label: 'Sidang Audit Dewan Grok',
-            prompt:
-              'Jalankan evaluasi Red-Team penuh lintas 10 agen untuk memverifikasi ketahanan beban puncak Cloud Run dan keamanan API.',
-          },
-        ]
+        {
+          label: 'Cutover Auth Zero-Trust',
+          prompt:
+            'Rancang dan implementasikan cutover autentikasi Zero-Trust dengan rotasi kunci webhook HMAC-SHA256 otomatis dan audit OWASP.',
+        },
+        {
+          label: 'Pipeline Telemetri Real-Time',
+          prompt:
+            'Bangun pipeline agregator telemetri multi-agen berkecepatan tinggi dengan perlindungan dead-letter queue dan pemantauan P99.',
+        },
+        {
+          label: 'Arsitektur UI Spasial 120fps',
+          prompt:
+            'Buat sistem orkestrasi DAG frontend interaktif dengan token tema adaptif gelap/terang dan verifikasi aksesibilitas WCAG AA+.',
+        },
+        {
+          label: 'Sidang Audit Dewan Grok',
+          prompt:
+            'Jalankan evaluasi Red-Team penuh lintas 10 agen untuk memverifikasi ketahanan beban puncak Cloud Run dan keamanan API.',
+        },
+      ]
       : [
-          {
-            label: 'Zero-Trust Auth Cutover',
-            prompt:
-              'Architect and implement a Zero-Trust authentication cutover with automated HMAC-SHA256 webhook key rotation and OWASP gate verification.',
-          },
-          {
-            label: 'Real-Time Telemetry Pipeline',
-            prompt:
-              'Build a partitioned multi-agent telemetry stream coordinator with dead-letter queue isolation and rolling P99 latency metrics.',
-          },
-          {
-            label: '120fps Spatial UI DAG',
-            prompt:
-              'Engineer an interactive frontend DAG orchestration engine with adaptive light/dark tokens and strict WCAG AA+ contrast compliance.',
-          },
-          {
-            label: 'Grok Council Red-Team Audit',
-            prompt:
-              'Run a full 10-agent Red-Team Council critique to verify Cloud Run peak-load resilience and cryptographic API boundaries.',
-          },
-        ];
+        {
+          label: 'Zero-Trust Auth Cutover',
+          prompt:
+            'Architect and implement a Zero-Trust authentication cutover with automated HMAC-SHA256 webhook key rotation and OWASP gate verification.',
+        },
+        {
+          label: 'Real-Time Telemetry Pipeline',
+          prompt:
+            'Build a partitioned multi-agent telemetry stream coordinator with dead-letter queue isolation and rolling P99 latency metrics.',
+        },
+        {
+          label: '120fps Spatial UI DAG',
+          prompt:
+            'Engineer an interactive frontend DAG orchestration engine with adaptive light/dark tokens and strict WCAG AA+ contrast compliance.',
+        },
+        {
+          label: 'Grok Council Red-Team Audit',
+          prompt:
+            'Run a full 10-agent Red-Team Council critique to verify Cloud Run peak-load resilience and cryptographic API boundaries.',
+        },
+      ];
 
   const handleCopyArtifact = (id: string, code: string) => {
-    navigator.clipboard?.writeText(code).catch(() => {});
+    navigator.clipboard?.writeText(code).catch(() => { });
     setCopiedArtifactId(id);
     window.setTimeout(() => {
       setCopiedArtifactId((prev) => (prev === id ? null : prev));
@@ -776,8 +776,8 @@ export function MultiAgentAgencyView() {
     if (aiProvider === 'GEMINI' && !validateGeminiApiKey(trimmed)) {
       setApiKeyError(
         locale === 'id'
-          ? 'Format kunci API Gemini tidak valid (wajib diawali AIza...). Kosongkan untuk menggunakan Antigravity Pro Bridge.'
-          : 'Invalid Gemini API key format (must start with AIza...). Leave blank to use Antigravity Pro Bridge.'
+          ? 'Format kunci API Gemini tidak valid (wajib diawali AIza...). Kosongkan untuk menggunakan Built-in Deterministic Engine.'
+          : 'Invalid Gemini API key format (must start with AIza...). Leave blank to use the Built-in Deterministic Engine.'
       );
       return;
     }
@@ -809,11 +809,10 @@ export function MultiAgentAgencyView() {
           <button
             type="button"
             onClick={() => setCenterTab('FLOOR')}
-            className={`inline-flex min-h-9 items-center gap-1.5 rounded px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider transition-colors ${
-              centerTab === 'FLOOR'
-                ? 'bg-fg text-bg'
-                : 'border border-line bg-terminal-bg text-muted hover:text-fg'
-            }`}
+            className={`inline-flex min-h-9 items-center gap-1.5 rounded px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider transition-colors ${centerTab === 'FLOOR'
+              ? 'bg-fg text-bg'
+              : 'border border-line bg-terminal-bg text-muted hover:text-fg'
+              }`}
           >
             <Layers className="size-3.5" aria-hidden="true" />
             <span>{t.tabs.floor}</span>
@@ -822,11 +821,10 @@ export function MultiAgentAgencyView() {
           <button
             type="button"
             onClick={() => setCenterTab('DOTS_DAG')}
-            className={`inline-flex min-h-9 items-center gap-1.5 rounded px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider transition-colors ${
-              centerTab === 'DOTS_DAG'
-                ? 'bg-fg text-bg'
-                : 'border border-line bg-terminal-bg text-muted hover:text-fg'
-            }`}
+            className={`inline-flex min-h-9 items-center gap-1.5 rounded px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider transition-colors ${centerTab === 'DOTS_DAG'
+              ? 'bg-fg text-bg'
+              : 'border border-line bg-terminal-bg text-muted hover:text-fg'
+              }`}
           >
             <Network className="size-3.5 text-wire-cyan" aria-hidden="true" />
             <span>{t.tabs.dots}</span>
@@ -835,11 +833,10 @@ export function MultiAgentAgencyView() {
           <button
             type="button"
             onClick={() => setCenterTab('GROK_COUNCIL')}
-            className={`inline-flex min-h-9 items-center gap-1.5 rounded px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider transition-colors ${
-              centerTab === 'GROK_COUNCIL'
-                ? 'bg-fg text-bg'
-                : 'border border-line bg-terminal-bg text-muted hover:text-fg'
-            }`}
+            className={`inline-flex min-h-9 items-center gap-1.5 rounded px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider transition-colors ${centerTab === 'GROK_COUNCIL'
+              ? 'bg-fg text-bg'
+              : 'border border-line bg-terminal-bg text-muted hover:text-fg'
+              }`}
           >
             <Users className="size-3.5 text-wire-purple" aria-hidden="true" />
             <span>{t.tabs.council}</span>
@@ -848,11 +845,10 @@ export function MultiAgentAgencyView() {
           <button
             type="button"
             onClick={() => setCenterTab('ARTIFACTS')}
-            className={`inline-flex min-h-9 items-center gap-1.5 rounded px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider transition-colors ${
-              centerTab === 'ARTIFACTS'
-                ? 'bg-fg text-bg'
-                : 'border border-line bg-terminal-bg text-muted hover:text-fg'
-            }`}
+            className={`inline-flex min-h-9 items-center gap-1.5 rounded px-3 py-1 font-mono text-[11px] font-semibold uppercase tracking-wider transition-colors ${centerTab === 'ARTIFACTS'
+              ? 'bg-fg text-bg'
+              : 'border border-line bg-terminal-bg text-muted hover:text-fg'
+              }`}
           >
             <Code2 className="size-3.5 text-wire-green" aria-hidden="true" />
             <span>{t.tabs.artifacts}</span>
@@ -992,9 +988,8 @@ export function MultiAgentAgencyView() {
                   <div className="flex items-center justify-between gap-1">
                     <div className="flex items-center gap-1.5">
                       <span
-                        className={`size-2 rounded-full ${
-                          previewHeld ? 'bg-wire-amber' : 'bg-wire-green'
-                        }`}
+                        className={`size-2 rounded-full ${previewHeld ? 'bg-wire-amber' : 'bg-wire-green'
+                          }`}
                       />
                       <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-fg">
                         {t.sidebar.previewTitle}
@@ -1105,10 +1100,10 @@ export function MultiAgentAgencyView() {
                     wire.status === 'BLOCKED'
                       ? 'bg-wire-red'
                       : wire.status === 'HELD' || wire.status === 'AT_BAT'
-                      ? 'bg-wire-amber'
-                      : wire.status === 'VERIFIED' || wire.status === 'SHIPPED'
-                      ? 'bg-wire-green'
-                      : 'bg-wire-cyan';
+                        ? 'bg-wire-amber'
+                        : wire.status === 'VERIFIED' || wire.status === 'SHIPPED'
+                          ? 'bg-wire-green'
+                          : 'bg-wire-cyan';
 
                   return (
                     <div
@@ -1117,11 +1112,10 @@ export function MultiAgentAgencyView() {
                         setSelectedWireId(wire.id);
                         setSelectedAgentId(wire.assignedAgentId);
                       }}
-                      className={`cursor-pointer rounded border p-2 transition-colors ${
-                        isSelected
-                          ? 'border-wire-cyan bg-terminal-card'
-                          : 'border-line bg-terminal-card/70 hover:border-line-strong'
-                      }`}
+                      className={`cursor-pointer rounded border p-2 transition-colors ${isSelected
+                        ? 'border-wire-cyan bg-terminal-card'
+                        : 'border-line bg-terminal-card/70 hover:border-line-strong'
+                        }`}
                     >
                       <div className="flex items-center justify-between gap-2">
                         <p className="truncate font-mono text-[11px] font-bold text-fg">
@@ -1245,11 +1239,10 @@ export function MultiAgentAgencyView() {
                       <div
                         key={wire.id}
                         onClick={() => setSelectedWireId(wire.id)}
-                        className={`cursor-pointer rounded-lg border p-4 transition-colors ${
-                          wire.id === selectedWireId
-                            ? 'border-wire-cyan bg-terminal-card'
-                            : 'border-line bg-terminal-card/70 hover:border-line-strong'
-                        }`}
+                        className={`cursor-pointer rounded-lg border p-4 transition-colors ${wire.id === selectedWireId
+                          ? 'border-wire-cyan bg-terminal-card'
+                          : 'border-line bg-terminal-card/70 hover:border-line-strong'
+                          }`}
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="rounded bg-wire-cyan/15 px-2 py-0.5 font-mono text-xs font-bold text-wire-cyan">
@@ -1547,33 +1540,30 @@ export function MultiAgentAgencyView() {
               <button
                 type="button"
                 onClick={() => setOrchestrationMode('AUTO_DAG')}
-                className={`rounded border px-2 py-1 font-mono text-[10px] font-semibold transition-colors ${
-                  orchestrationMode === 'AUTO_DAG'
-                    ? 'border-wire-cyan bg-wire-cyan/15 text-wire-cyan'
-                    : 'border-line bg-terminal-bg text-muted hover:text-fg'
-                }`}
+                className={`rounded border px-2 py-1 font-mono text-[10px] font-semibold transition-colors ${orchestrationMode === 'AUTO_DAG'
+                  ? 'border-wire-cyan bg-wire-cyan/15 text-wire-cyan'
+                  : 'border-line bg-terminal-bg text-muted hover:text-fg'
+                  }`}
               >
                 {t.chat.modeAutoDag}
               </button>
               <button
                 type="button"
                 onClick={() => setOrchestrationMode('GROK_COUNCIL')}
-                className={`rounded border px-2 py-1 font-mono text-[10px] font-semibold transition-colors ${
-                  orchestrationMode === 'GROK_COUNCIL'
-                    ? 'border-wire-purple bg-wire-purple/15 text-wire-purple'
-                    : 'border-line bg-terminal-bg text-muted hover:text-fg'
-                }`}
+                className={`rounded border px-2 py-1 font-mono text-[10px] font-semibold transition-colors ${orchestrationMode === 'GROK_COUNCIL'
+                  ? 'border-wire-purple bg-wire-purple/15 text-wire-purple'
+                  : 'border-line bg-terminal-bg text-muted hover:text-fg'
+                  }`}
               >
                 {t.chat.modeGrokCouncil}
               </button>
               <button
                 type="button"
                 onClick={() => setOrchestrationMode('DIRECT_ASSIGN')}
-                className={`rounded border px-2 py-1 font-mono text-[10px] font-semibold transition-colors ${
-                  orchestrationMode === 'DIRECT_ASSIGN'
-                    ? 'border-wire-amber bg-wire-amber/15 text-wire-amber'
-                    : 'border-line bg-terminal-bg text-muted hover:text-fg'
-                }`}
+                className={`rounded border px-2 py-1 font-mono text-[10px] font-semibold transition-colors ${orchestrationMode === 'DIRECT_ASSIGN'
+                  ? 'border-wire-amber bg-wire-amber/15 text-wire-amber'
+                  : 'border-line bg-terminal-bg text-muted hover:text-fg'
+                  }`}
               >
                 {t.chat.modeDirect}
               </button>
@@ -1598,11 +1588,10 @@ export function MultiAgentAgencyView() {
             {messages.map((msg) => (
               <article
                 key={msg.id}
-                className={`rounded-lg border p-3 text-xs ${
-                  msg.sender === 'USER'
-                    ? 'ml-6 border-accent/40 bg-terminal-bg text-fg'
-                    : 'border-line bg-terminal-bg/90 text-fg'
-                }`}
+                className={`rounded-lg border p-3 text-xs ${msg.sender === 'USER'
+                  ? 'ml-6 border-accent/40 bg-terminal-bg text-fg'
+                  : 'border-line bg-terminal-bg/90 text-fg'
+                  }`}
               >
                 <div className="flex items-center justify-between gap-2 border-b border-line/60 pb-1.5 font-mono text-[10px]">
                   <span className="font-bold text-wire-cyan">
@@ -1772,11 +1761,10 @@ export function MultiAgentAgencyView() {
                     key={p}
                     type="button"
                     onClick={() => setPriority(p)}
-                    className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-bold ${
-                      priority === p
-                        ? 'bg-accent text-bg'
-                        : 'border border-line bg-terminal-card text-muted'
-                    }`}
+                    className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-bold ${priority === p
+                      ? 'bg-accent text-bg'
+                      : 'border border-line bg-terminal-card text-muted'
+                      }`}
                   >
                     {p}
                   </button>
@@ -1859,24 +1847,24 @@ export function MultiAgentAgencyView() {
                     const next = e.target.value;
                     setAiProvider(next);
                     const defaults: Record<string, string> = {
-                      ANTIGRAVITY_MCP: 'neon-hydrogen-xhigh',
+                      ANTIGRAVITY_MCP: 'deterministic-kahn-owasp-v2',
                       GEMINI: 'gemini-2.0-flash',
                       OPENAI: 'gpt-4o-mini',
                       ANTHROPIC: 'claude-3-5-sonnet-latest',
                       XAI_GROK: 'grok-2-latest',
                       OPENROUTER: 'deepseek/deepseek-chat',
                     };
-                    setAiModel(defaults[next] || 'neon-hydrogen-xhigh');
+                    setAiModel(defaults[next] || 'deterministic-kahn-owasp-v2');
                     setApiKeyError(null);
                   }}
                   className="mt-1.5 h-10 w-full rounded border border-line bg-terminal-bg px-3 font-mono text-xs text-fg outline-none focus:border-wire-cyan"
                 >
-                  <option value="ANTIGRAVITY_MCP">Antigravity MCP Pro Bridge (Default · Non-API-Key)</option>
-                  <option value="GEMINI">Google Gemini Direct API</option>
-                  <option value="OPENAI">OpenAI Chat Completions</option>
-                  <option value="ANTHROPIC">Anthropic Claude Messages</option>
-                  <option value="XAI_GROK">xAI Grok API</option>
-                  <option value="OPENROUTER">OpenRouter Multi-AI</option>
+                  <option value="ANTIGRAVITY_MCP">Built-in Deterministic Engine (Kahn DAG + OWASP · No LLM Key)</option>
+                  <option value="GEMINI">Google Gemini Direct API (Requires API Key)</option>
+                  <option value="OPENAI">OpenAI Chat Completions (Requires API Key)</option>
+                  <option value="ANTHROPIC">Anthropic Claude Messages (Requires API Key)</option>
+                  <option value="XAI_GROK">xAI Grok API (Requires API Key)</option>
+                  <option value="OPENROUTER">OpenRouter Multi-AI (Requires API Key)</option>
                 </select>
               </label>
 
@@ -1900,7 +1888,7 @@ export function MultiAgentAgencyView() {
                   type="password"
                   value={apiKeyDraft}
                   onChange={(e) => setApiKeyDraft(e.target.value)}
-                  placeholder="Kosongkan untuk Antigravity Pro Credit Bridge"
+                  placeholder="Kosongkan untuk Built-in Deterministic Engine"
                   autoComplete="off"
                   className="mt-1.5 h-10 w-full rounded border border-line bg-terminal-bg px-3 font-mono text-xs text-fg outline-none focus:border-wire-cyan"
                 />

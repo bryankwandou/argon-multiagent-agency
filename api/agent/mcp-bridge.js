@@ -32,8 +32,9 @@ export default async function handler(req, res) {
       }
       return res.status(200).json({
         status: 'CONNECTED',
-        protocol: 'Antigravity MCP JSON-RPC 2.0 Bridge',
-        billingChannel: 'Antigravity Pro Plan Account Credit (Non-API-Key Direct Runtime)',
+        protocol: 'MCP 2025-03-26 Streamable HTTP at /mcp',
+        mcpEndpoint: '/mcp',
+        engineMode: 'Built-in Deterministic Engine (Kahn DAG + OWASP · External LLM requires session API key)',
         supportedProviders: Object.keys(AI_PROVIDERS),
         authRequiredForTelemetry: true
       });
@@ -50,13 +51,14 @@ export default async function handler(req, res) {
 
     const payload = {
       status: 'CONNECTED',
-      protocol: 'Antigravity MCP JSON-RPC 2.0 Bridge',
-      billingChannel: 'Antigravity Pro Plan Account Credit (Non-API-Key Direct Runtime)',
+      protocol: 'MCP 2025-03-26 Streamable HTTP at /mcp',
+      mcpEndpoint: '/mcp',
+      engineMode: 'Built-in Deterministic Engine (Kahn DAG + OWASP · External LLM requires session API key)',
       activeAgents: [
-        'Gemini 4 Argon High',
-        'Neon Hydrogen xHigh',
-        'OpenAI Dots Kahn-DAG Orchestrator',
-        'Grok Heavy Byzantine Consensus Council'
+        'Kahn Topological DAG Orchestrator',
+        'Zero-Trust OWASP & Entropy Checker',
+        'Byzantine 3/4 Consensus Evaluator',
+        'Neon PostgreSQL Audit Ledger'
       ],
       supportedProviders: Object.values(AI_PROVIDERS),
       neonDatabase: {
@@ -73,10 +75,9 @@ export default async function handler(req, res) {
         role: caller.role
       },
       capabilities: {
-        realtimeOrchestration: true,
-        neonHydrogenSubagent: true,
-        zeroApiKeyCreditMode: true,
-        multiAiUnifiedRouter: true,
+        mcpStreamableHttp2025: true,
+        deterministicDagEngine: true,
+        multiAiOptionalApiKey: true,
         kahnDagCycleDetector: true,
         staticSecurityAuditEngine: true,
         grokCouncilByzantineQuorum: true,
@@ -111,7 +112,8 @@ export default async function handler(req, res) {
         };
       } else if (cmd === 'VERIFY_PROVIDERS') {
         diagnostics = {
-          defaultBridge: 'ANTIGRAVITY_MCP (READY · 0ms cold auth)',
+          defaultEngine: 'Built-in Deterministic Engine (Kahn DAG + OWASP · No LLM API call)',
+          mcpServerEndpoint: '/mcp (MCP 2025-03-26 Streamable HTTP)',
           externalAdapters: Object.values(AI_PROVIDERS).map(p => ({
             id: p.id,
             defaultModel: p.defaultModel,
